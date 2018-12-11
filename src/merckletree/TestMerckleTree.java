@@ -1,18 +1,8 @@
 package merckletree;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.apache.commons.codec.binary.Hex;
-
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 
 public class TestMerckleTree {
 
@@ -32,12 +22,5 @@ public class TestMerckleTree {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-
-
-
-
-
 	}
-
 }
