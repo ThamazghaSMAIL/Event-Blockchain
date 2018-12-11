@@ -1,5 +1,7 @@
 package merckletree;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -10,6 +12,8 @@ import java.util.zip.Adler32;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.apache.commons.codec.binary.Hex;
 /**
  * au début on génére une clé (un bloc de génése) 
  * quelqu'un entre les 30 propose un bloc, il le transmets à tout le monde et ils vot voté pour lui 
@@ -40,8 +44,9 @@ public class MerckleTree {
 	/**
 	 * Créer un arbre à partir de feuilles 
 	 * @param feuilles
+	 * @throws NoSuchAlgorithmException 
 	 */
-	public MerckleTree(List<String> feuilles) {
+	public MerckleTree(List<String> feuilles) throws NoSuchAlgorithmException {
 		/**
 		 * ça sert à rien d'avoir un arbre d'une seule feuille
 		 */
@@ -77,8 +82,9 @@ public class MerckleTree {
 	 * ok
 	 * @param feuilles
 	 * @return
+	 * @throws NoSuchAlgorithmException 
 	 */
-	List<Node> calcul_parents(List<String> feuilles) {
+	List<Node> calcul_parents(List<String> feuilles) throws NoSuchAlgorithmException {
 		List<Node> parents = new ArrayList<Node>(feuilles.size() / 2);
 
 		for (int i = 0; i < feuilles.size() - 1; i += 2) {
@@ -134,8 +140,9 @@ public class MerckleTree {
 	 * ok
 	 * @param textefeuille
 	 * @return
+	 * @throws NoSuchAlgorithmException 
 	 */
-	private static Node construireFeuille(String textefeuille) {
+	private static Node construireFeuille(String textefeuille) throws NoSuchAlgorithmException {
 		Node feuille = new Node();
 		/**
 		 * affecter les champs de la feuille
@@ -180,9 +187,33 @@ public class MerckleTree {
 	}
 
 
-	private static String hashFeuille(String textefeuille) {
+	private static String hashFeuille(String textefeuille) throws NoSuchAlgorithmException {
 		// TODO hasher selon la meth demandée
-		return textefeuille;
+		String message = textefeuille;
+		String key = "your_key";
+		String algorithm = "HmacSHA512";  // OPTIONS= HmacSHA512, HmacSHA256, HmacSHA1, HmacMD5
+		String hash = "";
+		try {
+			// 1. Get an algorithm instance.
+			Mac sha256_hmac = Mac.getInstance(algorithm);
+			// 2. Create secret key.
+			SecretKeySpec secret_key = new SecretKeySpec(key.getBytes("UTF-8"), algorithm);
+			// 3. Assign secret key algorithm.
+			sha256_hmac.init(secret_key);
+			// 4. Generate hex encoded string.
+			 hash = Hex.encodeHexString(sha256_hmac.doFinal(message.getBytes("UTF-8")));
+			/**
+			 * output for "This is my message."
+			 * HmacSHA256 =gCZJBUrp45o+Z5REzMwyJrdbRj8Rvfoy33ULZ1bySXM=
+			 */
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			e.printStackTrace();
+		}
+		return hash;
 	}
 
 	private String hashInterne(String sig_gauche, String sig_droit) {
