@@ -1,78 +1,160 @@
 package blockchain;
 
-import com.sun.xml.internal.bind.v2.runtime.RuntimeUtil.ToStringAdapter;
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.util.List;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.apache.commons.codec.binary.Hex;
+
+import merckletree.MerckleTree;
 
 public class Block {
 
-	public Block(int index, long creation_time, String previous_hash, String data) {
-		super();
-		this.index = index;
-		this.creation_time = creation_time;
+	public Block(String previous_hash, List<Transaction> transactions, String public_key) 
+			throws NoSuchAlgorithmException {
 		this.previous_hash = previous_hash;
-		this.data = data;
-		this.hash = Block.calculate_hash(this);
+		this.transactions = transactions;
+		this.public_key = public_key;
+
+		try {
+			this.merckletreeroot = new MerckleTree(transactions).getRoot().sig;
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		this.hash = hash_block();
 	}
 
-	private String str() {
-		return this.index + this.creation_time + this.previous_hash + this.data;
-	}
-	private static String calculate_hash(Block block) {
-		// TODO Auto-generated method stub
-		return block.str();
-	}
 
-	private int index;
 
 	/**
-	 * store creation time of the bloc
+	 * contient le haché de tout le bloc courant
 	 */
-	private long creation_time;
-
 	private String hash ;
+	/**
+	 *  a partir de la liste des transactions 
+	 */
+	private String merckletreeroot;
 
 	private String previous_hash;
 
-	private String data;
+	private List<Transaction> transactions;
 
-	public int getIndex() {
-		return index;
+	private String signature;
+
+	private String public_key;
+
+	private int nonce;
+
+	/**
+	 * retourne beta
+	 * @param previous_hash2
+	 * @param string
+	 * @param hash2
+	 * @return
+	 */
+	private String str() {
+		return this.previous_hash+this.transactions.toString()+this.hash;
 	}
 
-	public void setIndex(int index) {
-		this.index = index;
+	/**
+	 * retourne alpha
+	 * @return
+	 * @throws NoSuchAlgorithmException 
+	 */
+	private String hash_block() throws NoSuchAlgorithmException {
+		return hmacsha256(str());
 	}
 
-	public long getCreation_time() {
-		return creation_time;
+	/**
+	 * l'utilisateur signe avec sa clé privée
+	 * @param private_key
+	 * @return
+	 */
+	private String sign(String private_key) 
+			throws SignatureException, NoSuchAlgorithmException,
+			InvalidKeyException, UnsupportedEncodingException {
+		/**
+		 * pour le moment les clés sont généré ici, plus tard ds wallet (node)
+		 */
+		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+		SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+
+		keyGen.initialize(256, random);
+
+		KeyPair pair = keyGen.generateKeyPair();
+		PrivateKey priv = pair.getPrivate();
+		PublicKey pub = pair.getPublic();
+
+
+		/*
+		 * Create a Signature object and initialize it with the private key
+		 */
+
+		Signature dsa = Signature.getInstance("SHA1withECDSA");
+
+		dsa.initSign(priv);
+
+		
+		byte[] strByte = this.hash.getBytes("UTF-8");
+		dsa.update(strByte);
+
+		/*
+		 * Now that all the data to be signed has been read in, generate a
+		 * signature for it
+		 */
+
+		byte[] realSig = dsa.sign();
+		String result = new BigInteger(1, realSig).toString(16);
+
+		return result;
 	}
 
-	public void setCreation_time(long creation_time) {
-		this.creation_time = creation_time;
+	//TODO modifier pour le calculer
+	/**
+	 * generer un nmbre aléatoire inferieur a la difficulté
+	 * @return
+	 */
+	private void findNounce() {
+		this.nonce = 1;
 	}
 
-	public String getHash() {
+
+	private static String hmacsha256(String text) throws NoSuchAlgorithmException {
+		String message = text;
+		String algorithm = "HmacSHA256"; 
+		String hash = "";
+		//TODO est ce que c'est 1 pour le bloc ?
+		String key = "1";
+		try {
+			// 1. Get an algorithm instance.
+			Mac sha256_hmac = Mac.getInstance(algorithm);
+			// 2. Create secret key.
+			SecretKeySpec secret_key = new SecretKeySpec(key.getBytes("UTF-8"), algorithm);
+			// 3. Assign secret key algorithm.
+			sha256_hmac.init(secret_key);
+			// 4. Generate hex encoded string.
+			hash = Hex.encodeHexString(sha256_hmac.doFinal(message.getBytes("UTF-8")));
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			e.printStackTrace();
+		}
 		return hash;
 	}
 
-	public void setHash(String hash) {
-		this.hash = hash;
-	}
 
-	public String getPrevious_hash() {
-		return previous_hash;
-	}
-
-	public void setPrevious_hash(String previous_hash) {
-		this.previous_hash = previous_hash;
-	}
-
-	public String getData() {
-		return data;
-	}
-
-	public void setData(String data) {
-		this.data = data;
-	}
-	
-	
 }

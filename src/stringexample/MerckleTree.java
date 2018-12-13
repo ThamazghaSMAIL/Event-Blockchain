@@ -1,4 +1,4 @@
-package merckletree;
+package stringexample;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
@@ -37,8 +37,8 @@ public class MerckleTree {
 	public static final byte INTERNAL_SIG_TYPE = 0x01;
 
 
-	private List<Transaction> feuilles;
-	private MerckleTreeNode racine;
+	private List<String> feuilles;
+	private Node racine;
 	private int NbreNoeuds;
 
 
@@ -47,7 +47,7 @@ public class MerckleTree {
 	 * @param feuilles
 	 * @throws NoSuchAlgorithmException 
 	 */
-	public MerckleTree(List<Transaction> feuilles) throws NoSuchAlgorithmException {
+	public MerckleTree(List<String> feuilles) throws NoSuchAlgorithmException {
 		/**
 		 * ça sert à rien d'avoir un arbre d'une seule feuille
 		 */
@@ -61,7 +61,7 @@ public class MerckleTree {
 		/**
 		 * Calculs des noeuds internes jusqu'à la racine
 		 */
-		List<MerckleTreeNode > parents = calcul_parents(feuilles);
+		List<Node> parents = calcul_parents(feuilles);
 
 		/**
 		 * ajouter le nombre de noeuds internes au nbre de noeuds total
@@ -76,28 +76,28 @@ public class MerckleTree {
 	 * @return
 	 * @throws NoSuchAlgorithmException 
 	 */
-	List<MerckleTreeNode > calcul_parents(List<Transaction> feuilles) throws NoSuchAlgorithmException {
-		List<MerckleTreeNode > parents = new ArrayList<MerckleTreeNode >(feuilles.size() / 2);
+	List<Node> calcul_parents(List<String> feuilles) throws NoSuchAlgorithmException {
+		List<Node> parents = new ArrayList<Node>(feuilles.size() / 2);
 
 		for (int i = 0; i < feuilles.size() - 1; i += 2) {
 			/**
 			 * construire les deux noeuds 
 			 */
-			MerckleTreeNode  leaf1 = construireFeuille(feuilles.get(i).toString());
-			MerckleTreeNode  leaf2 = construireFeuille(feuilles.get(i+1).toString());
+			Node leaf1 = construireFeuille(feuilles.get(i).toString());
+			Node leaf2 = construireFeuille(feuilles.get(i+1).toString());
 
 			/**
 			 * construire le père des deux feuilles
 			 */
-			MerckleTreeNode  parent = construireNoeudInterne(leaf1, leaf2);
+			Node parent = construireNoeudInterne(leaf1, leaf2);
 
 			parents.add(parent);
 		}
 
 		// if odd number of leafs, handle last entry
 		if (feuilles.size() % 2 != 0) {
-			MerckleTreeNode  feuille = construireFeuille(feuilles.get(feuilles.size() - 1).toString());      
-			MerckleTreeNode  parent = construireNoeudInterne(feuille, null);
+			Node feuille = construireFeuille(feuilles.get(feuilles.size() - 1).toString());      
+			Node parent = construireNoeudInterne(feuille, null);
 			parents.add(parent);
 		}
 
@@ -111,8 +111,8 @@ public class MerckleTree {
 	 * @return
 	 * @throws NoSuchAlgorithmException 
 	 */
-	private static MerckleTreeNode  construireFeuille(String textefeuille) throws NoSuchAlgorithmException {
-		MerckleTreeNode  feuille = new MerckleTreeNode ();
+	private static Node construireFeuille(String textefeuille) throws NoSuchAlgorithmException {
+		Node feuille = new Node();
 		/**
 		 * affecter les champs de la feuille
 		 */
@@ -133,8 +133,8 @@ public class MerckleTree {
 	 * @param fils_droit
 	 * @return
 	 */
-	private MerckleTreeNode  construireNoeudInterne(MerckleTreeNode  fils_gauche, MerckleTreeNode  fils_droit) {
-		MerckleTreeNode  parent = new MerckleTreeNode ();
+	private Node construireNoeudInterne(Node fils_gauche, Node fils_droit) {
+		Node parent = new Node();
 		parent.type = INTERNAL_SIG_TYPE;
 
 		/**
@@ -157,6 +157,7 @@ public class MerckleTree {
 
 
 	private static String hashFeuille(String textefeuille,String key) throws NoSuchAlgorithmException {
+		// TODO hasher selon la meth demandée
 		String message = textefeuille;
 		String algorithm = "HmacSHA256";  // OPTIONS= HmacSHA512, HmacSHA256, HmacSHA1, HmacMD5
 		String hash = "";
@@ -199,7 +200,7 @@ public class MerckleTree {
 		return this.NbreNoeuds;
 	}
 
-	public MerckleTreeNode getRoot() {
+	public Node getRoot() {
 		return this.racine;
 	}
 
@@ -221,11 +222,11 @@ public class MerckleTree {
 	 * Internal Nodes will have at least one child (always on the left).
 	 * Leaf Nodes will have no children (left = right = null).
 	 */
-	public static class MerckleTreeNode {
+	public static class Node {
 		public byte type;  // INTERNAL_SIG_TYPE or LEAF_SIG_TYPE
 		public String sig; // signature du noeud
-		public MerckleTreeNode fils_gauche;
-		public MerckleTreeNode fils_droit;
+		public Node fils_gauche;
+		public Node fils_droit;
 		public String texte;//contient le texte du noeud si c'est une feuille, =null sinon
 
 		@Override

@@ -1,4 +1,4 @@
-package merckletree;
+package stringexample;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -11,7 +11,9 @@ public class TestMerckleTree {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
-		List<Transaction> sigs = new ArrayList<>();
+		List<String> sigs = new ArrayList<>();
+		sigs.add("transaction 1");
+		sigs.add("transaction 2");
 		MerckleTree mt;
 		try {
 			mt = new MerckleTree(sigs);
