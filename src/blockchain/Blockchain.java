@@ -5,14 +5,14 @@ import java.util.List;
 
 public class Blockchain {
 
-	
+//	
 //	public Blockchain() {
 //		this.blocks = new ArrayList<Block>();
 //		
 //		
 //		List<Transaction> trans = new ArrayList<Transaction>();
-//		Block genesis_block = new Block(null,trans,null);
-//		this.blocks.add(genesis_block);
+//		//Block genesis_block = new Block(null,trans,null);
+//		//this.blocks.add(genesis_block);
 //	}
 //
 //	List<Block> blocks;

@@ -11,6 +11,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.crypto.Mac;
@@ -19,6 +20,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Hex;
 
 import merckletree.MerckleTree;
+import merckletree.MerckleTree.MerckleTreeNode;
 
 public class Block {
 
@@ -27,9 +29,16 @@ public class Block {
 		this.previous_hash = previous_hash;
 		this.transactions = transactions;
 		this.public_key = public_key;
+		
+		List<MerckleTreeNode> nodes = new ArrayList<MerckleTreeNode>();
+		MerckleTreeNode node =null;
+		for (Transaction t : this.transactions) {
+			node = new MerckleTreeNode(t.getJson());
+			nodes.add(node);
+		}
 
 		try {
-			this.merckletreeroot = new MerckleTree(transactions).getRoot().sig;
+			this.merckletreeroot = new MerckleTree(nodes).getRoot().sig;
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
@@ -45,7 +54,7 @@ public class Block {
 	/**
 	 *  a partir de la liste des transactions 
 	 */
-	private String merckletreeroot;
+	private byte[] merckletreeroot;
 
 	private String previous_hash;
 
