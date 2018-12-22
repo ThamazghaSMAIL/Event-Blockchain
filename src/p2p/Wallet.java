@@ -25,6 +25,18 @@ public class Wallet {
 		}
 	}
 
-	PrivateKey private_key;
-	PublicKey public_key;
+	protected PrivateKey private_key;
+	protected PublicKey public_key;
+	
+	
+	public PrivateKey getPrivate_key() {
+		return private_key;
+	}
+
+	public PublicKey getPublic_key() {
+		return public_key;
+	}
+
+
+
 }
