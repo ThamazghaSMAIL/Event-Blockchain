@@ -13,7 +13,7 @@ public class TestMerckleTree {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
-		List<MerckleTreeNode> sigs = new ArrayList<>();
+		List<MerckleTreeNode> sigs = new ArrayList<MerckleTreeNode>();
 		MerckleTreeNode t1 = new MerckleTreeNode(new String("transaction 1").getBytes());
 		MerckleTreeNode t2 = new MerckleTreeNode(new String("transaction 2").getBytes());
 		sigs.add(t1);
