@@ -79,35 +79,25 @@ public class Node {
 
 
 		if( myint == 1 ) {
-			broadcast_transaction(transaction1);
+			broadcast_transaction(transaction1,contacts);
 		}else {
 			System.out.println("choix pas valable");
 		}
-
-		
-
-
 	}
 
-	public static void broadcast_transaction(Transaction transaction) {
+	public static void broadcast_transaction(Transaction transaction, List<NodeInfos> contacts) {
 		PrintWriter out = null;
 		BufferedReader in = null;
 		Socket socket;
 		try {
-			socket = new Socket("localhost",2009);
+			NodeInfos ni = contacts.get(0);
+			socket = new Socket(ni.getIpAdress(),ni.getPort());
 			out = new PrintWriter(socket.getOutputStream());
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));	
 
 			Wallet w = new Wallet();
 			String json ="hihi";
-			//TODO c'est quoi creators_signature ?
-			//			Transaction transaction1 = new Transaction(w.getPublic_key(), 
-			//					"creators_signature", System.currentTimeMillis(), 
-			//					Transaction.CREATION_TYPE , json.getBytes());
-
-			//			ObjectMapper mapper = new ObjectMapper();
-			//			String jsonInString = mapper.writeValueAsString(transaction1);
-
+			
 			String trans_json = toJson(transaction);
 
 			out.write(trans_json);

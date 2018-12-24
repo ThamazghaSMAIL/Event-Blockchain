@@ -18,6 +18,6 @@ public class TestP2P {
 		Transaction transaction = new Transaction(w.getPublic_key(), 
 				"creators_signature", System.currentTimeMillis(), 
 				Transaction.CREATION_TYPE , json.getBytes());
-		node2.broadcast_transaction(transaction);
+		//node2.broadcast_transaction(transaction);
 	}
 }
