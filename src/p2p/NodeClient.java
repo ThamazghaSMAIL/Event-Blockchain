@@ -18,7 +18,7 @@ public class NodeClient {
 		BufferedReader in = null;
 		Socket socket;
 		try {
-			socket = new Socket("localhost",2009);
+			socket = new Socket("192.168.1.54",2009);
 			out = new PrintWriter(socket.getOutputStream());
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));	
 			

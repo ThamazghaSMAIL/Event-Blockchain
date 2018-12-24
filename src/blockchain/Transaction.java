@@ -16,6 +16,9 @@ public class Transaction {
 	public static String PARTICIPATION_TYPE = "participation";
 	public static String GESTIONCLE_TYPE = "gestion cle";
 	
+	public Transaction() {}
+	
+	
 	public Transaction(PublicKey creators_public_key, String creators_signature, long timestamp, String type,
 			byte[] json) {
 		this.creators_public_key = creators_public_key;
@@ -24,6 +27,8 @@ public class Transaction {
 		this.type = type;
 		this.json = json;
 	}
+	
+	
 	protected PublicKey creators_public_key;
 	protected String creators_signature;
 	protected long timestamp;
@@ -41,5 +46,61 @@ public class Transaction {
 
 	public void setJson(byte[] json) {
 		this.json = json;
+	}
+
+	public static String getCREATION_TYPE() {
+		return CREATION_TYPE;
+	}
+
+	public static void setCREATION_TYPE(String cREATION_TYPE) {
+		CREATION_TYPE = cREATION_TYPE;
+	}
+
+	public static String getPARTICIPATION_TYPE() {
+		return PARTICIPATION_TYPE;
+	}
+
+	public static void setPARTICIPATION_TYPE(String pARTICIPATION_TYPE) {
+		PARTICIPATION_TYPE = pARTICIPATION_TYPE;
+	}
+
+	public static String getGESTIONCLE_TYPE() {
+		return GESTIONCLE_TYPE;
+	}
+
+	public static void setGESTIONCLE_TYPE(String gESTIONCLE_TYPE) {
+		GESTIONCLE_TYPE = gESTIONCLE_TYPE;
+	}
+
+	public PublicKey getCreators_public_key() {
+		return creators_public_key;
+	}
+
+	public void setCreators_public_key(PublicKey creators_public_key) {
+		this.creators_public_key = creators_public_key;
+	}
+
+	public String getCreators_signature() {
+		return creators_signature;
+	}
+
+	public void setCreators_signature(String creators_signature) {
+		this.creators_signature = creators_signature;
+	}
+
+	public long getTimestamp() {
+		return timestamp;
+	}
+
+	public void setTimestamp(long timestamp) {
+		this.timestamp = timestamp;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
 	}
 }
