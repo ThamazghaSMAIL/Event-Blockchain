@@ -7,10 +7,12 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 import com.google.gson.Gson;
+import com.sun.corba.se.impl.ior.GenericTaggedComponent;
 
 import blockchain.Transaction;
 
@@ -21,12 +23,25 @@ public class Node {
 	List<NodeInfos> contacts;
 	public Node(List<NodeInfos> contacts) {
 		this.contacts = contacts;
-		this.contacts.add(new NodeInfos("192.168.1.54", 2009));
+		//this.contacts.add(new NodeInfos("192.168.1.54", 2009));
 	}
 	
 
 	public static void main(String[] args){
+		List<NodeInfos> contacts = new ArrayList<NodeInfos>();
+		Node n = new Node(contacts);
 		
+		Scanner keyboard = new Scanner(System.in);
+		
+		System.out.println("**************************");
+		System.out.println("enter at least a contact\n ip adress : ");
+		String ipadress = keyboard.nextLine();
+		
+		System.out.println("port :");
+		int port = keyboard.nextInt();
+		n.getContacts().add(new NodeInfos(ipadress, port));
+		
+		System.out.println("***************************");
 		/**
 		 * se mettre à l'écoute
 		 */
@@ -56,7 +71,7 @@ public class Node {
 				"creators_signature", System.currentTimeMillis(), 
 				Transaction.CREATION_TYPE , json.getBytes());
 
-		Scanner keyboard = new Scanner(System.in);
+		//Scanner keyboard = new Scanner(System.in);
 		System.out.println("**************************\n"
 				+ "1- Créer une transaction");
 		System.out.println("enter an integer");
@@ -107,6 +122,16 @@ public class Node {
 	private static String toJson(Transaction transaction1) {
 		Gson gson = new Gson();
 		return gson.toJson(transaction1);
+	}
+
+
+	public List<NodeInfos> getContacts() {
+		return contacts;
+	}
+
+
+	public void setContacts(List<NodeInfos> contacts) {
+		this.contacts = contacts;
 	}
 }
 
