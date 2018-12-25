@@ -1,6 +1,12 @@
 package blockchain;
 
-import java.security.PrivateKey;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 
 /**
  * dans notre cas trois types de transactions dont :
@@ -34,10 +40,15 @@ public class Transaction {
 	protected String type;
 	protected byte[] json;
 	
+	
+
 	@Override
 	public String toString() {
-		return this.creators_public_key.toString()+this.creators_signature+this.timestamp+this.type+this.json;
+		return "Transaction [creators_public_key=" + Arrays.toString(creators_public_key) + ", creators_signature="
+				+ creators_signature + ", timestamp=" + timestamp + ", type=" + type + ", json=" + Arrays.toString(json)
+				+ "]";
 	}
+
 
 	public byte[] getJson() {
 		return this.json;
@@ -77,5 +88,13 @@ public class Transaction {
 
 	public void setType(String type) {
 		this.type = type;
+	}
+	
+	public PublicKey getPublicKey() throws NoSuchAlgorithmException, InvalidKeySpecException
+	{
+	    KeyFactory factory;
+		factory = KeyFactory.getInstance("EC");
+		X509EncodedKeySpec encodedKeySpec = new X509EncodedKeySpec(this.creators_public_key);
+		return factory.generatePublic(encodedKeySpec);
 	}
 }

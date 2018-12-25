@@ -19,6 +19,7 @@ public class Wallet {
 			keyGen.initialize(256, random);
 			pair = keyGen.generateKeyPair();
 			this.private_key = pair.getPrivate().getEncoded();
+			System.out.println(pair.getPublic().getFormat());
 			this.public_key = pair.getPublic().getEncoded();
 			System.err.println(this.public_key.getClass().getCanonicalName());
 		} catch (NoSuchAlgorithmException e) {
