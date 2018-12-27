@@ -12,125 +12,197 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import javax.annotation.Resources;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 
 import blockchain.Transaction;
+import p2p.interfaces.INode;
+import p2p.protocole.Request;
 
-public class Node {
+public class Node implements INode{
+
+	public final static int LIMIT = 10;
 	/**
 	 * Les adresses des noeuds que ce noeud connait préalablement
 	 */
-	List<NodeInfos> contacts;
 
-	public Node(List<NodeInfos> contacts) {
-		this.contacts = contacts;
-		// this.contacts.add(new NodeInfos("192.168.1.54", 2009));
+
+	public CopyOnWriteArrayList<NodeInfos> contacts;
+	public Wallet wallet ;
+	public List<Transaction> transactions;
+
+
+	private Node() {
+		this.contacts = new CopyOnWriteArrayList<NodeInfos>();
+		this.wallet = new Wallet();
+		this.transactions = new ArrayList<Transaction>();
+		this.contacts.add(new NodeInfos("192.168.1.54", 2009));
 	}
 
-	public static void main(String[] args) {
-		//Wallet w = new Wallet();
-//		try {
-//			String jsonStr = "{\"creators_public_key\":[48,89,48,19,6,7,42,-122,72,-50,61,2,1,6,8,42,-122,72,-50,61,3,1,7,3,66,0,4,74,-32,-116,-37,-30,-47,-13,-125,-22,67,-96,86,82,94,-28,59,52,4,-38,-123,27,-32,-105,55,121,-71,-106,-7,58,51,97,49,71,73,34,92,-44,-39,118,-112,108,-59,-117,117,-69,-108,20,-17,39,115,-28,-27,127,-34,51,-50,71,-74,92,-38,-62,-97,-46,-49],\"creators_signature\":\"creators_signature\",\"timestamp\":1545764014635,\"type\":\"creation\",\"json\":[104,105,104,105]}";
-//			final GsonBuilder builder = new GsonBuilder();
-//			final Gson gson = builder.create();
-//			Transaction t = gson.fromJson(jsonStr, Transaction.class);
-//			System.out.println(t.getCreators_public_key());
-//			System.out.println(t.getPublicKey());
-//
-//		
-//			
-//		} catch (Exception e  ) {
-//			e.printStackTrace();
-//		}
+	/** Instance unique pré-initialisée */
+	private static Node INSTANCE = new Node();
 
-		 List<NodeInfos> contacts = new ArrayList<NodeInfos>();
-		 Node n = new Node(contacts);
-		
-		 Scanner keyboard = new Scanner(System.in);
-		
-		 System.out.println("**************************");
-		 System.out.println("enter at least a contact\n ip adress : ");
-		 String ipadress = keyboard.nextLine();
-		
-		 System.out.println("port :");
-		 int port = keyboard.nextInt();
-		 n.getContacts().add(new NodeInfos(ipadress, port));
-		
-		 System.out.println("***************************");
-		 /**
+	public static Node getInstance()
+	{   
+		return INSTANCE;
+	}
+
+
+
+	public static void main(String[] args) {
+		/**
+		 * l'utilisateur saisi un seul contact pour entrer dans la blockchain, le reste se fera automatiquement
+		 */
+		Scanner keyboard = new Scanner(System.in);
+
+		System.out.println("**************************");
+		System.out.println("enter at least a contact ");
+
+		System.out.println("ip adress :");
+		String ipadress = keyboard.nextLine();
+
+		System.out.println("port :");
+		int port = keyboard.nextInt();
+
+		/**
 		 * se mettre à l'écoute
 		 */
-		 (new Thread(){
-		 public void run(){
-		 ServerSocket socket;
-		
-		 try {
-		 socket = new ServerSocket(2009);
-		 Thread server = new Thread(new AcceptNode(socket));
-		 server.start();
-		 System.out.println(" Le serveur est prêt !\n");
-		 } catch (IOException e) {
-		 e.printStackTrace();
-		 }
-		 }
-		 }).start();
-		
-		
-		 /**
+		getInstance().listen();
+
+		NodeInfos ni = new NodeInfos(ipadress, port);
+		getInstance().premier_contact(ni);
+
+
+		getInstance().getContacts().add(ni);
+
+
+
+		System.out.println("***************************\n");
+
+
+
+		/**
 		 * create transaction
 		 */
-		 try {
-			Wallet w = new Wallet();
-			 String json ="hihi";
-			 //TODO c'est quoi creators_signature ?
-			 Transaction transaction1 = new Transaction(w.getPublic_key(),
-			 "creators_signature", System.currentTimeMillis(),
-			 Transaction.CREATION_TYPE , json.getBytes());
-			
-			 //Scanner keyboard = new Scanner(System.in);
-			 System.out.println("**************************\n"
-			 + "1- Créer une transaction" + transaction1.getPublicKey());
-			 System.out.println("enter an integer");
-			 int myint = keyboard.nextInt();
-			
-			
-			 if( myint == 1 ) {
-				 System.out.println("1111111");
-			 broadcast_transaction(transaction1,contacts);
-			 }else {
-			 System.out.println("choix pas valable");
-			 }
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeySpecException e) {
-			// TODO Auto-generated catch block
+		try {
+			Transaction transaction1 = create_transaction();
+
+			System.out.println("**************************\n"
+					+ "1- Créer une transaction");
+			System.out.println("enter an integer");
+			int myint = keyboard.nextInt();
+
+
+			if( myint == 1 ) {
+				getInstance().broadcast_transaction(transaction1,getInstance().getContacts());
+			}else {
+				System.out.println("choix pas valable");
+			}
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public static void broadcast_transaction(Transaction transaction, List<NodeInfos> contacts) {
+	@Override
+	public void premier_contact(NodeInfos ni) {
+		PrintWriter out = null;
+		BufferedReader in = null;
+		Socket socket;
+		try {
+			System.out.println("premier contact");
+			socket = new Socket(ni.getIpAdress(), ni.getPort());
+			out = new PrintWriter(socket.getOutputStream());
+			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+			JsonObject coord = new JsonObject();
+			coord.addProperty("paquet", "hello");
+			coord.addProperty("ippadress", "192.168.1.44");
+			coord.addProperty("port", 2009);
+			String coordonees = coord.toString();
+			out.write(coordonees);
+			out.flush();
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.out.println("this node isn't disponible");
+		}
+
+	}
+
+
+
+	@Override
+	public void listen() {
+		(new Thread(){
+			public void run(){
+				ServerSocket socket;
+				try {
+					socket = new ServerSocket(2009);
+					(new Thread(new AcceptNode(socket,getInstance()))).start();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}).start();
+		System.out.println("listening...");
+	}
+
+
+
+	private static Transaction create_transaction() {
+		//TODO c'est quoi creators_signature ?
+		//TODO changer par les données saisies par le user 
+		Transaction t = new Transaction();
+		t.setCreators_public_key(getInstance().getW().getPublic_key());
+		t.setCreators_signature("creators_signature");	
+		t.setTimestamp(System.currentTimeMillis());
+
+		t.setType(Transaction.CREATION_TYPE);
+
+		JsonObject j = new JsonObject();
+		if( t.getType().equals(Transaction.CREATION_TYPE)) {
+			j.addProperty("name", "name");
+			j.addProperty("description", "description");
+			j.addProperty("date", Transaction.getDateJson());
+
+		}else if (t.getType().equals(Transaction.PARTICIPATION_TYPE)) {
+			//TODO c'est quoi event-hash 
+			j.addProperty("event-hash", "event-hash");
+			j.addProperty("location", "location");
+			j.addProperty("limits", Transaction.getLimitsJson());
+		}
+
+
+		t.setJson(j.toString().getBytes());
+
+		return t;
+	}
+
+	@Override
+	public void broadcast_transaction(Transaction transaction, List<NodeInfos> contacts) {
 		PrintWriter out = null;
 		BufferedReader in = null;
 		Socket socket;
 		try {
 			System.out.println("trying to broadcast");
-			NodeInfos ni = contacts.get(0);
-			socket = new Socket(ni.getIpAdress(), ni.getPort());
-			out = new PrintWriter(socket.getOutputStream());
-			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-			Wallet w = new Wallet();
-			String json = "hihi";
-
-			String trans_json = toJson(transaction);
-			
-			out.write(trans_json);
-			out.flush();
-			socket.close();
+			for(NodeInfos ni : contacts ){
+				socket = new Socket(ni.getIpAdress(), ni.getPort());
+				out = new PrintWriter(socket.getOutputStream());
+				in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				//TODO mettre les champs qu'il faut dans json
+				//System.out.println(((ECPublicKey)transaction.getPublicKey()).getW().getAffineX().bitLength());
+				String trans_json = toJson(transaction);
+				out.write(trans_json);
+				out.flush();
+				socket.close();
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -142,13 +214,53 @@ public class Node {
 		return gson.toJson(transaction1);
 	}
 
+
+	@Override
+	public void search_freinds() {
+		List<NodeInfos> contacts = getInstance().getContacts();
+		Thread t;
+		ServerSocket socket;
+		try {
+			socket = new ServerSocket(2009);
+
+			for( NodeInfos n : contacts ) {
+				t = new Thread() {
+					public void run() {
+
+					}
+				};
+				t.start();
+			}
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+
+	}
+
+	@Override
+	public void minage() {
+		// TODO Auto-generated method stub
+	}
+	/**
+	 * getters and setters
+	 */
 	public List<NodeInfos> getContacts() {
 		return contacts;
 	}
-
-	public void setContacts(List<NodeInfos> contacts) {
-		this.contacts = contacts;
+	public Wallet getW() {
+		return wallet;
 	}
+	public void setW(Wallet w) {
+		this.wallet = w;
+	}
+	public List<Transaction> getTransactions() {
+		return transactions;
+	}
+	public void setTransactions(List<Transaction> transactions) {
+		this.transactions = transactions;
+	}
+
+
 }
 
 class AcceptNode implements Runnable {
@@ -157,27 +269,72 @@ class AcceptNode implements Runnable {
 	private Socket socket;
 	private int nbrclient = 1;
 	public Thread t1;
+	public Node instance ;
 
-	public AcceptNode(ServerSocket s) {
+	public AcceptNode(ServerSocket s, Node instance) {
 		socketserver = s;
+		this.instance = instance;
 	}
 
 	public void run() {
-
 		try {
 			while (true) {
 				socket = socketserver.accept(); // Un node se connecte on l'accepte
 				t1 = new Thread() {
 					public void run() {
 						try {
-							receive_transaction(socket);
+							System.out.println("receiving");
+							BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+							String json = in.readLine();
+							System.out.println(json);
+							Request request = toRequest(json);
+							String paquet = request.getPaquet(); 
+
+							if(paquet.equals("hello")) {
+								System.out.println("hello");
+								/**
+								 * enregistrer le contact
+								 */
+								instance.getContacts().add(new NodeInfos(request.getIpaddress(), request.getPort()));
+								System.out.println("new contact"+instance.getContacts().get(0));
+								/**
+								 * lui répondre "ok"
+								 */
+
+								PrintWriter out = new PrintWriter(socket.getOutputStream());
+								out.write(make_responce());
+							}else if (paquet.equals("transaction")) {
+								//TODO add transaction dans broadcast transaction 
+								Transaction t = receive_transaction(socket);
+								instance.getTransactions().add(t);
+							}
+
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
 					}
+
+					private String make_responce() {
+						final GsonBuilder builder = new GsonBuilder();
+						final Gson gson = builder.create();
+						Request r = new Request();
+
+						r.setPaquet("ok");
+						r.setIpaddress("192.168.1.44");
+						r.setPort(2009);
+						r.setVersion("1.0");
+						if( instance.getContacts().size() >= instance.LIMIT) {
+							r.setFlag("saturated");
+						}else {
+							r.setFlag("good");
+						}
+
+						return gson.toJson(r);
+
+					}
 				};
 				t1.start();
-				System.out.println("Le client numéro " + nbrclient + " est connecté !");
+				System.out.println("Le node numéro " + nbrclient + " est connecté !");
 				nbrclient++;
 				// socket.close();
 			}
@@ -187,71 +344,50 @@ class AcceptNode implements Runnable {
 		}
 	}
 
-	public void receive_transaction(Socket s) throws IOException {
+	public Transaction receive_transaction(Socket s) throws IOException {
+		Transaction t = null ;
 		try {
-			BufferedReader in = null;
-			in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+			BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
 			String json = in.readLine();
 			System.out.println("je viens de recevoir une transaction" + json);
 
-//		String jsonStr = "{\"creators_public_key\":{\"w\":{\"x\":78649421698933646191900224114266286575873751204767990094939210844518474925562,\"y\":63083437692842313511151106572703147327134487824414857947347528395597583446748},\"params\":{\"name\":\"secp256r1 [NIST P-256, X9.62 prime256v1]\",\"oid\":\"1.2.840.10045.3.1.7\",\"encoded\":[6,8,42,-122,72,-50,61,3,1,7],\"curve\":{\"field\":{\"p\":115792089210356248762697446949407573530086143415290314195533631308867097853951},\"a\":115792089210356248762697446949407573530086143415290314195533631308867097853948,\"b\":41058363725152142129326129780047268409114441015993725554835256314039467401291},\"g\":{\"x\":48439561293906451759052585252797914202762949526041747995844080717082404635286,\"y\":36134250956749795798585127919587881956611106672985015071877198253568414405109},\"n\":115792089210356248762697446949407573529996955224135760342422259061068512044369,\"h\":1},\"algid\":{\"algid\":{\"encoding\":[42,-122,72,-50,61,2,1],\"componentLen\":-1},\"algParams\":{\"provider\":{\"AlgorithmParameters.EC\":\"sun.security.ec.ECParameters\",\"KeyAgreement.ECDH SupportedKeyClasses\":\"java.security.interfaces.ECPublicKey|java.security.interfaces.ECPrivateKey\",\"Signature.SHA256withECDSA ImplementedIn\":\"Software\",\"Provider.id name\":\"SunEC\",\"Signature.NONEwithECDSA SupportedKeyClasses\":\"java.security.interfaces.ECPublicKey|java.security.interfaces.ECPrivateKey\",\"Signature.SHA224withECDSA ImplementedIn\":\"Software\",\"Signature.SHA1withECDSA\":\"sun.security.ec.ECDSASignature$SHA1\",\"Alg.Alias.Signature.OID.1.2.840.10045.4.1\":\"SHA1withECDSA\",\"Signature.SHA256withECDSA SupportedKeyClasses\":\"java.security.interfaces.ECPublicKey|java.security.interfaces.ECPrivateKey\",\"Signature.SHA224withECDSA SupportedKeyClasses\":\"java.security.interfaces.ECPublicKey|java.security.interfaces.ECPrivateKey\",\"KeyPairGenerator.EC KeySize\":\"256\",\"KeyFactory.EC ImplementedIn\":\"Software\",\"Provider.id version\":\"1.8\",\"AlgorithmParameters.EC KeySize\":\"256\",\"Signature.NONEwithECDSA\":\"sun.security.ec.ECDSASignature$Raw\",\"Signature.SHA512withECDSA ImplementedIn\":\"Software\",\"Alg.Alias.KeyFactory.EllipticCurve\":\"EC\",\"Alg.Alias.KeyPairGenerator.EllipticCurve\":\"EC\",\"Signature.SHA256withECDSA\":\"sun.security.ec.ECDSASignature$SHA256\",\"Signature.SHA512withECDSA\":\"sun.security.ec.ECDSASignature$SHA512\",\"Signature.SHA1withECDSA KeySize\":\"256\",\"Signature.SHA1withECDSA SupportedKeyClasses\":\"java.security.interfaces.ECPublicKey|java.security.interfaces.ECPrivateKey\",\"Signature.SHA384withECDSA SupportedKeyClasses\":\"java.security.interfaces.ECPublicKey|java.security.interfaces.ECPrivateKey\",\"Alg.Alias.AlgorithmParameters.EllipticCurve\":\"EC\",\"Alg.Alias.AlgorithmParameters.1.2.840.10045.2.1\":\"EC\",\"Alg.Alias.Signature.1.2.840.10045.4.1\":\"SHA1withECDSA\",\"Signature.SHA224withECDSA\":\"sun.security.ec.ECDSASignature$SHA224\",\"Signature.SHA384withECDSA ImplementedIn\":\"Software\",\"AlgorithmParameters.EC ImplementedIn\":\"Software\",\"Provider.id info\":\"Sun Elliptic Curve provider (EC, ECDSA, ECDH)\",\"Signature.SHA512withECDSA SupportedKeyClasses\":\"java.security.interfaces.ECPublicKey|java.security.interfaces.ECPrivateKey\",\"KeyPairGenerator.EC\":\"sun.security.ec.ECKeyPairGenerator\",\"Alg.Alias.Signature.OID.1.2.840.10045.4.3.4\":\"SHA512withECDSA\",\"Alg.Alias.Signature.OID.1.2.840.10045.4.3.3\":\"SHA384withECDSA\",\"KeyAgreement.ECDH\":\"sun.security.ec.ECDHKeyAgreement\",\"Alg.Alias.Signature.OID.1.2.840.10045.4.3.2\":\"SHA256withECDSA\",\"Alg.Alias.Signature.1.2.840.10045.4.3.4\":\"SHA512withECDSA\",\"Alg.Alias.Signature.OID.1.2.840.10045.4.3.1\":\"SHA224withECDSA\",\"Signature.SHA384withECDSA\":\"sun.security.ec.ECDSASignature$SHA384\",\"Alg.Alias.Signature.1.2.840.10045.4.3.3\":\"SHA384withECDSA\",\"Alg.Alias.Signature.1.2.840.10045.4.3.2\":\"SHA256withECDSA\",\"Alg.Alias.Signature.1.2.840.10045.4.3.1\":\"SHA224withECDSA\",\"Signature.SHA1withECDSA ImplementedIn\":\"Software\",\"Signature.NONEwithECDSA ImplementedIn\":\"Software\",\"Provider.id className\":\"sun.security.ec.SunEC\",\"AlgorithmParameters.EC SupportedCurves\":\"[secp112r1,1.3.132.0.6]|[secp112r2,1.3.132.0.7]|[secp128r1,1.3.132.0.28]|[secp128r2,1.3.132.0.29]|[secp160k1,1.3.132.0.9]|[secp160r1,1.3.132.0.8]|[secp160r2,1.3.132.0.30]|[secp192k1,1.3.132.0.31]|[secp192r1,NIST P-192,X9.62 prime192v1,1.2.840.10045.3.1.1]|[secp224k1,1.3.132.0.32]|[secp224r1,NIST P-224,1.3.132.0.33]|[secp256k1,1.3.132.0.10]|[secp256r1,NIST P-256,X9.62 prime256v1,1.2.840.10045.3.1.7]|[secp384r1,NIST P-384,1.3.132.0.34]|[secp521r1,NIST P-521,1.3.132.0.35]|[X9.62 prime192v2,1.2.840.10045.3.1.2]|[X9.62 prime192v3,1.2.840.10045.3.1.3]|[X9.62 prime239v1,1.2.840.10045.3.1.4]|[X9.62 prime239v2,1.2.840.10045.3.1.5]|[X9.62 prime239v3,1.2.840.10045.3.1.6]|[sect113r1,1.3.132.0.4]|[sect113r2,1.3.132.0.5]|[sect131r1,1.3.132.0.22]|[sect131r2,1.3.132.0.23]|[sect163k1,NIST K-163,1.3.132.0.1]|[sect163r1,1.3.132.0.2]|[sect163r2,NIST B-163,1.3.132.0.15]|[sect193r1,1.3.132.0.24]|[sect193r2,1.3.132.0.25]|[sect233k1,NIST K-233,1.3.132.0.26]|[sect233r1,NIST B-233,1.3.132.0.27]|[sect239k1,1.3.132.0.3]|[sect283k1,NIST K-283,1.3.132.0.16]|[sect283r1,NIST B-283,1.3.132.0.17]|[sect409k1,NIST K-409,1.3.132.0.36]|[sect409r1,NIST B-409,1.3.132.0.37]|[sect571k1,NIST K-571,1.3.132.0.38]|[sect571r1,NIST B-571,1.3.132.0.39]|[X9.62 c2tnb191v1,1.2.840.10045.3.0.5]|[X9.62 c2tnb191v2,1.2.840.10045.3.0.6]|[X9.62 c2tnb191v3,1.2.840.10045.3.0.7]|[X9.62 c2tnb239v1,1.2.840.10045.3.0.11]|[X9.62 c2tnb239v2,1.2.840.10045.3.0.12]|[X9.62 c2tnb239v3,1.2.840.10045.3.0.13]|[X9.62 c2tnb359v1,1.2.840.10045.3.0.18]|[X9.62 c2tnb431r1,1.2.840.10045.3.0.20]|[brainpoolP160r1,1.3.36.3.3.2.8.1.1.1]|[brainpoolP192r1,1.3.36.3.3.2.8.1.1.3]|[brainpoolP224r1,1.3.36.3.3.2.8.1.1.5]|[brainpoolP256r1,1.3.36.3.3.2.8.1.1.7]|[brainpoolP320r1,1.3.36.3.3.2.8.1.1.9]|[brainpoolP384r1,1.3.36.3.3.2.8.1.1.11]|[brainpoolP512r1,1.3.36.3.3.2.8.1.1.13]\",\"KeyPairGenerator.EC ImplementedIn\":\"Software\",\"KeyAgreement.ECDH ImplementedIn\":\"Software\",\"KeyFactory.EC\":\"sun.security.ec.ECKeyFactory\"},\"paramSpi\":{\"namedCurve\":{\"name\":\"secp256r1 [NIST P-256, X9.62 prime256v1]\",\"oid\":\"1.2.840.10045.3.1.7\",\"encoded\":[6,8,42,-122,72,-50,61,3,1,7],\"curve\":{\"field\":{\"p\":115792089210356248762697446949407573530086143415290314195533631308867097853951},\"a\":115792089210356248762697446949407573530086143415290314195533631308867097853948,\"b\":41058363725152142129326129780047268409114441015993725554835256314039467401291},\"g\":{\"x\":48439561293906451759052585252797914202762949526041747995844080717082404635286,\"y\":36134250956749795798585127919587881956611106672985015071877198253568414405109},\"n\":115792089210356248762697446949407573529996955224135760342422259061068512044369,\"h\":1}},\"algorithm\":\"EC\",\"initialized\":true},\"constructedFromDer\":false},\"key\":[4,-83,-31,-2,-61,35,14,31,54,-126,16,51,-66,-100,117,38,-17,84,119,-89,-83,20,-99,27,1,15,-27,19,24,99,21,69,-6,-117,119,-11,-34,-9,-51,40,-7,-42,51,-13,67,-82,-21,116,-89,39,126,15,-29,-16,64,-121,62,105,-18,37,92,-82,67,114,-36],\"unusedBits\":0},\"creators_signature\":\"creators_signature\",\"timestamp\":1545760544296,\"type\":\"creation\",\"json\":[104,105,104,105]}\n";
-			final GsonBuilder builder = new GsonBuilder();
-			final Gson gson = builder.create();
+			t = toTransaction(json);
 
-			Transaction t = gson.fromJson(json, Transaction.class);
-			// Transaction t = new Transaction();
-
-			// Transaction t = toTransaction(json);
 			System.out.println("creator_sig : " + t.getPublicKey());
 			System.err.println(((ECPublicKey) t.getPublicKey()).getW().getAffineX());
 			s.close();
 		} catch (JsonSyntaxException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InvalidKeySpecException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return t;
 	}
 
 	private Transaction toTransaction(String json) {
-		System.out.println("receive : " + json);
-		Gson gson = new Gson();
+		final GsonBuilder builder = new GsonBuilder();
+		final Gson gson = builder.create();
 		return gson.fromJson(json, Transaction.class);
 	}
 
-	public void client() {
-		PrintWriter out = null;
-		BufferedReader in = null;
-		Socket socket;
-		try {
-			// TODO changer en contacts.get(0)
-			socket = new Socket("192.168.1.54", 2009);
-			out = new PrintWriter(socket.getOutputStream());
-			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
-			Wallet w = new Wallet();
-			String json = "hihi";
-			// TODO c'est quoi creators_signature ?
-			Transaction transaction1 = new Transaction(w.getPublic_key(), "creators_signature",
-					System.currentTimeMillis(), Transaction.CREATION_TYPE, json.getBytes());
-
-			String trans_json = toJson(transaction1);
-
-			out.write(trans_json);
-			out.flush();
-			socket.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	private static String toJson(String s) {
+		final GsonBuilder builder = new GsonBuilder();
+		final Gson gson = builder.create();
+		return gson.toJson(s);
 	}
 
-	private static String toJson(Transaction transaction1) {
-		Gson gson = new Gson();
-		return gson.toJson(transaction1);
+	private Request toRequest(String json) {
+		final GsonBuilder builder = new GsonBuilder();
+		final Gson gson = builder.create();
+		return gson.fromJson(json, Request.class);
+	}
+
+	public NodeInfos toNodeInfos(String json) {
+		final GsonBuilder builder = new GsonBuilder();
+		final Gson gson = builder.create();
+		return gson.fromJson(json, NodeInfos.class);
 	}
 
 }

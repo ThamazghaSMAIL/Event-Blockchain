@@ -6,7 +6,15 @@ import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 
 /**
  * dans notre cas trois types de transactions dont :
@@ -96,5 +104,34 @@ public class Transaction {
 		factory = KeyFactory.getInstance("EC");
 		X509EncodedKeySpec encodedKeySpec = new X509EncodedKeySpec(this.creators_public_key);
 		return factory.generatePublic(encodedKeySpec);
+	}
+	
+	public static String getLimitsJson() {
+		JsonObject jlimits = new JsonObject();
+		final GsonBuilder builder = new GsonBuilder();
+		final Gson gson = builder.create();
+		
+		jlimits.addProperty("min", "");
+		jlimits.addProperty("max", "");
+		
+		return jlimits.toString();
+	}
+
+
+
+	public static String getDateJson() {
+		JsonObject jdate = new JsonObject();
+		final GsonBuilder builder = new GsonBuilder();
+		final Gson gson = builder.create();
+		Date date = Calendar.getInstance().getTime();
+
+		// Display a date in day, month, year format
+		DateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+		String today = formatter.format(date);
+		
+		jdate.addProperty("date", today);
+		jdate.addProperty("format", "dd/MM/yyyy");
+		
+		return jdate.toString();
 	}
 }
