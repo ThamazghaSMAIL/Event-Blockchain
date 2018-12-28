@@ -41,7 +41,6 @@ public class Transaction {
 		this.json = json;
 	}
 	
-	
 	protected byte[] creators_public_key;
 	protected String creators_signature;
 	protected long timestamp;
@@ -134,4 +133,5 @@ public class Transaction {
 		
 		return jdate.toString();
 	}
+	
 }

@@ -1,4 +1,4 @@
-package p2p;
+package p2p.test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
 import blockchain.Transaction;
+import p2p.node.Wallet;
 
 public class NodeClient {
 

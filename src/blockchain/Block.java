@@ -19,12 +19,15 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Hex;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import merckletree.MerckleTree;
 import merckletree.MerckleTree.MerckleTreeNode;
 
 public class Block {
 
-	public Block(String previous_hash, List<Transaction> transactions, String public_key) 
+	public Block(String previous_hash, List<Transaction> transactions, byte[] public_key) 
 			throws NoSuchAlgorithmException {
 		this.previous_hash = previous_hash;
 		this.transactions = transactions;
@@ -62,7 +65,7 @@ public class Block {
 
 	private String signature;
 
-	private String public_key;
+	private byte[] public_key;
 
 	private int nonce;
 
@@ -163,6 +166,12 @@ public class Block {
 			e.printStackTrace();
 		}
 		return hash;
+	}
+
+	public static String toJson(Block b) {
+		final GsonBuilder builder = new GsonBuilder();
+		final Gson gson = builder.create();
+		return gson.toJson(b);
 	}
 
 

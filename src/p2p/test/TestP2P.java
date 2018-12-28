@@ -1,4 +1,4 @@
-package p2p;
+package p2p.test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -8,6 +8,9 @@ import java.util.Calendar;
 import java.util.Date;
 
 import blockchain.Transaction;
+import p2p.node.Node;
+import p2p.node.NodeInfos;
+import p2p.node.Wallet;
 
 public class TestP2P {
 

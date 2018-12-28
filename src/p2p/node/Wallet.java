@@ -1,4 +1,4 @@
-package p2p;
+package p2p.node;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;

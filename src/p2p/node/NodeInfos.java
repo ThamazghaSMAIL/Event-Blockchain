@@ -1,4 +1,4 @@
-package p2p;
+package p2p.node;
 
 public class NodeInfos {
 	public NodeInfos(String ipAdress, int port) {

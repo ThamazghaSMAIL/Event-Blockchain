@@ -3,12 +3,10 @@ package p2p.interfaces;
 import java.util.List;
 
 import blockchain.Transaction;
-import p2p.NodeInfos;
+import p2p.node.NodeInfos;
 
 public interface INode {
 	public void premier_contact(NodeInfos ni);
-	public void broadcast_transaction(Transaction transaction, List<NodeInfos> contacts);
-	public void search_freinds();
 	public void listen();
-	public void minage();
+	void search_freinds(List<NodeInfos> list);
 }
