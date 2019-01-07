@@ -6,11 +6,12 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import com.google.gson.Gson;
 
 import blockchain.Block;
-import blockchain.Transaction;
+import consensus.Consensus;
 import p2p.protocole.Request;
 
 public class Minage implements Runnable{
@@ -19,16 +20,31 @@ public class Minage implements Runnable{
 		super();
 		this.instance = instance;
 	}
-	public Node instance;
+	public static Node instance;
 
 
 	@Override
 	public void run() {
-		//TODO remplacer par l'id u node choisi pour le minage
-		//TODO initialiser id
-		int tour = 0;
-		if( tour == instance.getId())
-			miner();
+		int num_node = 1;
+
+		try {
+			while (true) {
+				System.out.println("[Minage] il est temps de miner un bloc ");
+				int tour = Consensus.hmac_sha256(num_node);
+				
+
+				System.out.println("c'est au tour de "+tour + " de miner un bloc ");
+				if( tour == instance.getId()) {
+					miner();
+				}
+				num_node = (num_node+1)%Consensus.NODES_NUMBER;
+				TimeUnit.SECONDS.sleep(10);
+//				TimeUnit.MINUTES.sleep(10);
+			}
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 
@@ -36,11 +52,13 @@ public class Minage implements Runnable{
 		if( instance.getTransactions().size() > 0 ) {
 			Block new_block = instance.getBlockchain().newBlock();
 			broadcast_block(new_block);
+		}else {
+			System.out.println("Sorry ! there's no transaction in your list");
 		}
 	}
 
 
-	private void broadcast_block(Block new_block) {
+	public static void broadcast_block(Block new_block) {
 		PrintWriter out = null;
 		BufferedReader in = null;
 		Socket socket;
@@ -52,7 +70,7 @@ public class Minage implements Runnable{
 				socket = new Socket(ni.getIpAdress(), ni.getPort());
 				out = new PrintWriter(socket.getOutputStream());
 				in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-				
+
 				String block_json = Block.toJson(new_block);
 				Request req_block = new Request("newblock","myipaddress",2009);
 				req_block.setRest(block_json);

@@ -33,8 +33,9 @@ public class Node implements INode{
 		this.contacts = new CopyOnWriteArrayList<NodeInfos>();
 		this.wallet = new Wallet();
 		this.transactions = new ArrayList<Transaction>();
-		this.contacts.add(new NodeInfos("localhost", 2009));
+		//this.contacts.add(new NodeInfos("localhost", 2009));
 		this.blockchain = new Blockchain(getInstance());
+		//TODO mettre un id pour le noeud
 	}
 
 	/** Instance unique pré-initialisée */
@@ -77,6 +78,9 @@ public class Node implements INode{
 			}
 		}).start();
 
+		/** Minage **/
+		(new Thread(new Minage(getInstance()))).start();
+		
 		/**
 		 * create transaction
 		 */
@@ -114,8 +118,9 @@ public class Node implements INode{
 			coord.addProperty("paquet", "hello");
 			coord.addProperty("ippadress", "192.168.1.44");
 			coord.addProperty("port", 2009);
-			String coordonees = coord.toString();
-			out.write(coordonees);
+			
+			
+			out.write(toBinaire(coord));
 			out.flush();
 			socket.close();
 		} catch (IOException e) {
@@ -125,6 +130,11 @@ public class Node implements INode{
 	}
 
 
+
+	private String toBinaire(JsonObject coord) {
+		String coordonees = coord.toString();
+		return null;
+	}
 
 	@Override
 	public void listen() {

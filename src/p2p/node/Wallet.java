@@ -3,8 +3,6 @@ package p2p.node;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.SecureRandom;
 
 public class Wallet {
@@ -38,7 +36,4 @@ public class Wallet {
 	public byte[] getPublic_key() {
 		return public_key;
 	}
-
-
-
 }

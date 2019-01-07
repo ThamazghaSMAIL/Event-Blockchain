@@ -16,6 +16,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
+import blockchain.Block;
 import blockchain.Transaction;
 import p2p.protocole.Request;
 
@@ -36,6 +37,8 @@ public class AcceptNode implements Runnable {
 		try {
 			while (true) {
 				socket = socketserver.accept(); // Un node se connecte on l'accepte
+				final GsonBuilder builder = new GsonBuilder();
+				final Gson gson = builder.create();
 				t1 = new Thread() {
 					public void run() {
 						try {
@@ -55,16 +58,18 @@ public class AcceptNode implements Runnable {
 								PrintWriter out = new PrintWriter(socket.getOutputStream());
 								out.write(make_responce());
 							}else if (paquet.equals("transaction")) {
-								//TODO add transaction dans broadcast transaction 
 								receive_transaction(request.getRest());
 
 							}else if (paquet.equals("ok")) {
 								System.out.println("okay i'll search another freinds");
-								final GsonBuilder builder = new GsonBuilder();
-								final Gson gson = builder.create();
 								List<NodeInfos> list = gson.fromJson(request.getContacts(), 
 										new TypeToken<List<NodeInfos>>(){}.getType());
 								instance.search_freinds(list);
+							}else if (paquet.equals("ok")) {
+								System.out.println("j'ai reçu un nouveau block");
+								Block new_block = gson.fromJson(request.getRest(),Block.class);
+								instance.getBlockchain().addBlock(new_block);
+								Minage.broadcast_block(new_block);
 							}
 							/**
 							 * enregistrer le contact
