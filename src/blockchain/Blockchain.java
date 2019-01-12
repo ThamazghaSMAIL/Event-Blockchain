@@ -8,13 +8,12 @@ import p2p.node.Node;
 
 public class Blockchain {
 
-	public Blockchain(Node inst) {
+	public Blockchain() {
 		this.blocks = new ArrayList<Block>();
-		instance = inst;
 	}
 
 	public List<Block> blocks;
-	public static Node instance ;
+	public static Node instance = Node.getInstance();
 
 	public Block getLatestBlock() {
 		return this.blocks.get(this.blocks.size()-1);

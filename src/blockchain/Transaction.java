@@ -2,7 +2,6 @@ package blockchain;
 
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -27,7 +26,7 @@ public class Transaction {
 
 	public static String CREATION_TYPE = "creation";
 	public static String PARTICIPATION_TYPE = "participation";
-	public static String GESTIONCLE_TYPE = "gestion cle";
+	public static String GESTIONCLE_TYPE = "gestion_cle";
 	
 	public Transaction() {}
 	

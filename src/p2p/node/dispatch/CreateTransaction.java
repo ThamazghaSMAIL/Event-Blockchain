@@ -1,10 +1,15 @@
-package p2p.node;
+package p2p.node.dispatch;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.util.List;
 import java.util.Scanner;
 
@@ -13,16 +18,16 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
 import blockchain.Transaction;
-import p2p.protocole.Request;
+import p2p.node.Node;
+import p2p.node.NodeInfos;
 
 public class CreateTransaction implements Runnable{
 
-	public CreateTransaction(Node instance) {
-		this.instance = instance;
+	public CreateTransaction() {
 	}
 
-	
-	public static Node instance;
+
+	public static Node instance = Node.getInstance();
 	@Override
 	public void run() {
 		try {
@@ -40,7 +45,7 @@ public class CreateTransaction implements Runnable{
 			e.printStackTrace();
 		}
 	}
-	
+
 	private static Transaction create_transaction() {
 		//TODO c'est quoi creators_signature ?
 		//TODO changer par les données saisies par le user 
@@ -80,12 +85,14 @@ public class CreateTransaction implements Runnable{
 				socket = new Socket(ni.getIpAdress(), ni.getPort());
 				out = new PrintWriter(socket.getOutputStream());
 				in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
 				String trans_json = toJson(transaction);
-				Request req_trans = new Request("transaction","myipaddress",2009);
-				req_trans.setRest(trans_json);
-				
-				out.write((new Gson()).toJson(req_trans));
-				System.out.println("h");
+
+				//Request req_trans = new Request("transaction","myipaddress",2009);
+				//req_trans.setRest(trans_json);
+				String trans = DispatchConversion.toBinary(trans_json,signer(trans_json));
+
+				out.write((new Gson()).toJson(trans));
 				out.flush();
 				socket.close();
 			}
@@ -94,11 +101,32 @@ public class CreateTransaction implements Runnable{
 		}
 
 	}
-	
+
 	private static String toJson(Transaction transaction1) {
 		final GsonBuilder builder = new GsonBuilder();
 		final Gson gson = builder.create();
 		return gson.toJson(transaction1);
+	}
+
+	public static byte[] signer(String trans_json) {
+		byte[] signatureBytes = null;
+		try {
+			byte[] data = trans_json.getBytes("UTF8");
+			Signature dsa = Signature.getInstance("SHA1withECDSA");
+			dsa.initSign(instance.getW().getPrivateK());
+			dsa.update(data);
+			
+			signatureBytes = dsa.sign();
+
+			/** verificationo optionnal */
+			dsa.initVerify(instance.getW().getPublicK());
+			dsa.update(data);
+			System.out.println(dsa.verify(signatureBytes));
+		
+		} catch (InvalidKeyException | UnsupportedEncodingException | NoSuchAlgorithmException | SignatureException e) {
+			e.printStackTrace();
+		}
+		return signatureBytes;
 	}
 
 }

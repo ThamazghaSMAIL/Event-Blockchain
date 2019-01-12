@@ -16,6 +16,11 @@ import com.google.gson.JsonObject;
 import blockchain.Blockchain;
 import blockchain.Transaction;
 import p2p.interfaces.INode;
+import p2p.node.dispatch.CreateTransaction;
+import p2p.node.dispatch.DispatchConversion;
+import p2p.node.minage.Minage;
+import p2p.node.reception.AcceptNode;
+import p2p.node.reception.ReceptionConversion;
 
 public class Node implements INode{
 
@@ -34,24 +39,44 @@ public class Node implements INode{
 		this.wallet = new Wallet();
 		this.transactions = new ArrayList<Transaction>();
 		//this.contacts.add(new NodeInfos("localhost", 2009));
-		this.blockchain = new Blockchain(getInstance());
+		this.blockchain = new Blockchain();
 		//TODO mettre un id pour le noeud
 	}
 
 	/** Instance unique pré-initialisée */
-	private static Node INSTANCE = new Node();
-
+	private static volatile Node INSTANCE ;
+	private static Object mutex = new Object();
 	public static Node getInstance()
 	{   
-		return INSTANCE;
+		Node result = INSTANCE;
+		if (result == null) {
+			synchronized (mutex) {
+				result = INSTANCE;
+				if (result == null)
+					INSTANCE = result = new Node();
+			}
+		}
+		return result;
 	}
 
 	public static void main(String[] args) {
 		/**
 		 * l'utilisateur saisi un seul contact pour entrer dans la blockchain, le reste se fera automatiquement
 		 */
-		NodeInfos ni = saisie();
+		//NodeInfos ni = saisie();
 
+		NodeInfos ni = new NodeInfos("localhost", 2000);
+		
+		(new Thread(){
+			public void run(){
+				try {
+					getInstance().premier_contact(ni);
+					//getInstance().getContacts().add(ni);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}).start();
 		/**
 		 * se mettre à l'écoute
 		 */
@@ -67,25 +92,16 @@ public class Node implements INode{
 		}).start();
 
 
-		(new Thread(){
-			public void run(){
-				try {
-					getInstance().premier_contact(ni);
-					//getInstance().getContacts().add(ni);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		}).start();
-
-		/** Minage **/
-		(new Thread(new Minage(getInstance()))).start();
 		
-		/**
-		 * create transaction
-		 */
-		Thread t = new Thread(new CreateTransaction(getInstance()));
-		t.start();
+
+//		/** Minage **/
+//		(new Thread(new Minage())).start();
+//
+//		/**
+//		 * create transaction
+//		 */
+//		Thread t = new Thread(new CreateTransaction());
+//		t.start();
 	}
 
 	private static NodeInfos saisie() {
@@ -103,6 +119,7 @@ public class Node implements INode{
 	}
 
 
+
 	@Override
 	public void premier_contact(NodeInfos ni) {
 		PrintWriter out = null;
@@ -114,13 +131,29 @@ public class Node implements INode{
 			out = new PrintWriter(socket.getOutputStream());
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
+			/**
+			 * construire le json à envoyer
+			 */
 			JsonObject coord = new JsonObject();
 			coord.addProperty("paquet", "hello");
-			coord.addProperty("ippadress", "192.168.1.44");
-			coord.addProperty("port", 2009);
+			coord.addProperty("ippadress", "localhost");
+			coord.addProperty("port", 2000);
+
+			/**
+			 * recuperer la signature de l'opération
+			 */
+			String data = coord.toString();
+			byte[] signature = DispatchConversion.signer(data,getInstance().getW().getPrivateK());
 			
+			/**
+			 * construire l'operation : taille + json + signature, le tout en binaire
+			 */
+			String result = DispatchConversion.toBinary(data, signature);
 			
-			out.write(toBinaire(coord));
+
+//			System.out.println("**************verification ");
+//			ReceptionConversion.operationToString(result);
+			out.write(result);
 			out.flush();
 			socket.close();
 		} catch (IOException e) {
@@ -130,12 +163,6 @@ public class Node implements INode{
 	}
 
 
-
-	private String toBinaire(JsonObject coord) {
-		String coordonees = coord.toString();
-		return null;
-	}
-
 	@Override
 	public void listen() {
 		(new Thread(){
@@ -143,7 +170,7 @@ public class Node implements INode{
 				ServerSocket socket;
 				try {
 					socket = new ServerSocket(2009);
-					new AcceptNode(socket,getInstance());
+					new AcceptNode(socket);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -172,7 +199,8 @@ public class Node implements INode{
 		}
 
 	}
-	
+
+
 	/**
 	 * getters and setters
 	 */

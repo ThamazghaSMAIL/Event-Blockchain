@@ -1,4 +1,4 @@
-package p2p.node;
+package p2p.node.minage;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,16 +11,15 @@ import java.util.concurrent.TimeUnit;
 import com.google.gson.Gson;
 
 import blockchain.Block;
-import consensus.Consensus;
-import p2p.protocole.Request;
+import p2p.node.Node;
+import p2p.node.NodeInfos;
+import p2p.protocole.Operation;
 
 public class Minage implements Runnable{
 
-	public Minage(Node instance) {
-		super();
-		this.instance = instance;
+	public Minage() {
 	}
-	public static Node instance;
+	public static Node instance = Node.getInstance();
 
 
 	@Override
@@ -29,6 +28,7 @@ public class Minage implements Runnable{
 
 		try {
 			while (true) {
+				TimeUnit.SECONDS.sleep(1000);
 				System.out.println("[Minage] il est temps de miner un bloc ");
 				int tour = Consensus.hmac_sha256(num_node);
 				
@@ -38,7 +38,7 @@ public class Minage implements Runnable{
 					miner();
 				}
 				num_node = (num_node+1)%Consensus.NODES_NUMBER;
-				TimeUnit.SECONDS.sleep(10);
+				
 //				TimeUnit.MINUTES.sleep(10);
 			}
 		} catch (InterruptedException e) {
@@ -72,7 +72,7 @@ public class Minage implements Runnable{
 				in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
 				String block_json = Block.toJson(new_block);
-				Request req_block = new Request("newblock","myipaddress",2009);
+				Operation req_block = new Operation("newblock","myipaddress",2009);
 				req_block.setRest(block_json);
 				out.write((new Gson()).toJson(req_block));
 				out.flush();

@@ -1,50 +1,64 @@
 package p2p.test;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.security.Signature;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-
-import blockchain.Transaction;
 import p2p.node.Wallet;
+import p2p.node.dispatch.DispatchConversion;
 
 public class NodeClient {
-
+	static Wallet w;
 	public static void main(String[] zero){
 		PrintWriter out = null;
 		BufferedReader in = null;
 		Socket socket;
 		try {
-			socket = new Socket("192.168.1.54",2009);
+
+			w = new Wallet();
+
+			String data = "Transaction_0";
+			byte[] signature = signer(data);
+			String trans = DispatchConversion.toBinary(data, signature);
+			
+			socket = new Socket("localhost",2009);
 			out = new PrintWriter(socket.getOutputStream());
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));	
-			
-			Wallet w = new Wallet();
-			String json ="hihi";
-			//TODO c'est quoi creators_signature ?
-			Transaction transaction1 = new Transaction(w.getPublic_key(), 
-					"creators_signature", System.currentTimeMillis(), 
-					Transaction.CREATION_TYPE , json.getBytes());
-			
-//			ObjectMapper mapper = new ObjectMapper();
-//			String jsonInString = mapper.writeValueAsString(transaction1);
-			
-			String trans_json = toJson(transaction1);
-	        
-			out.write(trans_json);
+			out.write(trans);
 			out.flush();
 			socket.close();
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	private static String toJson(Transaction transaction1) {
-		Gson gson = new Gson();
-		return gson.toJson(transaction1);
+	public static byte[] signer(String trans_json) {
+		byte[] signatureBytes = null;
+		try {
+			byte[] data = trans_json.getBytes("UTF8");
+
+			Signature dsa = Signature.getInstance("SHA1withECDSA");
+
+			dsa.initSign(w.getPrivateK());
+
+			//String str = trans_json;
+			//byte[] strByte = trans_json.getBytes("UTF-8");
+			dsa.update(data);
+
+			/*
+			 * Now that all the data to be signed has been read in, generate a
+			 * signature for it
+			 */
+
+			byte[] realSig = dsa.sign();
+			signatureBytes = realSig;
+
+		} catch (Exception e) {
+			System.err.println("Caught exception " + e.toString());
+		}
+		return signatureBytes;
 	}
+
 }

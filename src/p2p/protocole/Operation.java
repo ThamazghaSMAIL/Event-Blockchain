@@ -1,9 +1,8 @@
 package p2p.protocole;
 
-public class Request {
-
+public class Operation {
 	
-	public Request(String paquet, String ipaddress, int port) {
+	public Operation(String paquet, String ipaddress, int port) {
 		this.paquet = paquet;
 		this.ipaddress = ipaddress;
 		this.port = port;
@@ -12,7 +11,7 @@ public class Request {
 		this.contacts = null;
 	}
 
-	public Request() {}
+	public Operation() {}
 	
 	public String rest;
 	public String paquet;

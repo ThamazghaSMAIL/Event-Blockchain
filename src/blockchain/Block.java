@@ -68,13 +68,12 @@ public class Block {
 	private byte[] public_key;
 
 	private int nonce;
+	
+	//TODO 
+	private int timeStamp ; 
 
 	/**
 	 * retourne beta
-	 * @param previous_hash2
-	 * @param string
-	 * @param hash2
-	 * @return
 	 */
 	private String str() {
 		return this.previous_hash+this.transactions.toString()+this.hash;

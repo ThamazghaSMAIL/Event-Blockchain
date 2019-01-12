@@ -1,4 +1,4 @@
-package p2p.node;
+package p2p.node.reception;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,7 +18,11 @@ import com.google.gson.reflect.TypeToken;
 
 import blockchain.Block;
 import blockchain.Transaction;
-import p2p.protocole.Request;
+import p2p.node.Node;
+import p2p.node.NodeInfos;
+import p2p.node.dispatch.DispatchConversion;
+import p2p.node.minage.Minage;
+import p2p.protocole.Operation;
 
 public class AcceptNode implements Runnable {
 
@@ -26,11 +30,10 @@ public class AcceptNode implements Runnable {
 	private Socket socket;
 	private int nbrclient = 1;
 	public Thread t1;
-	public Node instance ;
+	public static Node instance = Node.getInstance();
 
-	public AcceptNode(ServerSocket s, Node instance) {
+	public AcceptNode(ServerSocket s) {
 		socketserver = s;
-		this.instance = instance;
 	}
 
 	public void run() {
@@ -42,11 +45,17 @@ public class AcceptNode implements Runnable {
 				t1 = new Thread() {
 					public void run() {
 						try {
-							System.out.println("receiving");
+							System.out.println("**************receiving");
 							BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-							String json = in.readLine();
-							System.out.println(json);
-							Request request = toRequest(json);
+							String bin = in.readLine();
+							System.out.println("binaire reçu : "+bin);
+							
+							/** Recuperer l'operation en string */
+							ReceptionConversion.operationToString(bin); 
+							String json = ReceptionConversion.json;
+							String signature = ReceptionConversion.signature;
+							
+							Operation request = toRequest(json);
 							String paquet = request.getPaquet(); 
 
 							if(paquet.equals("hello")) {
@@ -54,9 +63,12 @@ public class AcceptNode implements Runnable {
 								/**
 								 * lui répondre "ok"
 								 */
-
+								System.out.println("response "+make_responce_ok());
 								PrintWriter out = new PrintWriter(socket.getOutputStream());
-								out.write(make_responce());
+								System.out.println("response "+make_responce_ok());
+								out.write(make_responce_ok());
+								
+								
 							}else if (paquet.equals("transaction")) {
 								receive_transaction(request.getRest());
 
@@ -98,14 +110,16 @@ public class AcceptNode implements Runnable {
 			instance.getContacts().add(ni);
 	}
 
-	private String make_responce() {
+	private String make_responce_ok() {
 		final GsonBuilder builder = new GsonBuilder();
 		final Gson gson = builder.create();
-		Request r = new Request();
+		Operation r = new Operation();
+		
+		
 
 		r.setPaquet("ok");
 		//TODO replace with ip adress of machine getip..
-		r.setIpaddress("192.168.1.44");
+		r.setIpaddress("localhost");
 		r.setPort(2009);
 		r.setVersion("1.0");
 		if( instance.getContacts().size() >= instance.LIMIT) {
@@ -114,9 +128,10 @@ public class AcceptNode implements Runnable {
 		}else {
 			r.setFlag("good");
 		}
-
-		return gson.toJson(r);
-
+		String r_json = gson.toJson(r);
+		byte[] signature = DispatchConversion.signer(r_json, instance.getW().getPrivateK());
+		String responce_binary = DispatchConversion.toBinary(r_json, signature);
+		return responce_binary;
 	}
 
 	public void receive_transaction(String trans) throws IOException {
@@ -147,10 +162,10 @@ public class AcceptNode implements Runnable {
 		return gson.toJson(s);
 	}
 
-	private Request toRequest(String json) {
+	private Operation toRequest(String json) {
 		final GsonBuilder builder = new GsonBuilder();
 		final Gson gson = builder.create();
-		return gson.fromJson(json, Request.class);
+		return gson.fromJson(json, Operation.class);
 	}
 
 	public NodeInfos toNodeInfos(String json) {
