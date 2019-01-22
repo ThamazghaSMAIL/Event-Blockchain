@@ -51,7 +51,18 @@ public class MerckleTree {
 		/**
 		 * Calculs des noeuds internes jusqu'à la racine
 		 */
-		calcul_parents(feuilles);
+		if( feuilles.size() > 0 )
+			calcul_parents(feuilles);
+		else 
+		{
+			this.racine = new MerckleTreeNode();
+			this.racine.texte = "".getBytes();
+			try {
+				this.racine.sig = hashEmpty(this.racine.texte);
+			} catch (NoSuchAlgorithmException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	/**
@@ -61,9 +72,9 @@ public class MerckleTree {
 	 * @throws NoSuchAlgorithmException 
 	 */
 	public byte[] calcul_parents(List<MerckleTreeNode> feuilles){
-		if(feuilles.size() == 1 ) {
+		if(feuilles.size() == 1) {
 			this.racine = feuilles.get(0);
-			return racine.sig;
+			return this.racine.sig;
 		}else {
 			List<MerckleTreeNode> parents = new ArrayList<MerckleTreeNode>();
 			for (int i = 0; i < feuilles.size(); i += 2) {
@@ -119,7 +130,7 @@ public class MerckleTree {
 		MerckleTreeNode  parent = null;//= new MerckleTreeNode ();
 		if (fils_droit == null) {
 			parent =  new MerckleTreeNode();
-			parent.sig=fils_gauche.sig;
+			parent.sig = fils_gauche.sig;
 			parent.fils_gauche = fils_gauche;
 		} else {
 			parent =  new MerckleTreeNode();
@@ -136,7 +147,7 @@ public class MerckleTree {
 
 
 	private static byte[] hashFeuille( byte[] textefeuille) throws NoSuchAlgorithmException {
-		String key = "0";
+		String key = "\000";
 		String algorithm = "HmacSHA256";  // OPTIONS= HmacSHA512, HmacSHA256, HmacSHA1, HmacMD5
 		byte[] hash = null;
 		try {
@@ -160,7 +171,7 @@ public class MerckleTree {
 	}
 
 	private static byte[] hashInternalNode(String textefeuille) throws NoSuchAlgorithmException {
-		String key = "1";
+		String key = "\001";
 		String algorithm = "HmacSHA256";  // OPTIONS= HmacSHA512, HmacSHA256, HmacSHA1, HmacMD5
 		byte[] hash = null;
 		try {
@@ -213,6 +224,30 @@ public class MerckleTree {
 		return this.racine;
 	}
 
+	private static byte[] hashEmpty( byte[] textefeuille) throws NoSuchAlgorithmException {
+		String key = "\002";
+		String algorithm = "HmacSHA256";  // OPTIONS= HmacSHA512, HmacSHA256, HmacSHA1, HmacMD5
+		byte[] hash = null;
+		try {
+			// 1. Get an algorithm instance.
+			Mac sha256_hmac = Mac.getInstance(algorithm);
+			// 2. Create secret key.
+			SecretKeySpec secret_key = new SecretKeySpec(key.getBytes("UTF-8"), algorithm);
+			// 3. Assign secret key algorithm.
+			sha256_hmac.init(secret_key);
+			// 4. Generate hex encoded string.
+			hash = sha256_hmac.doFinal(textefeuille);
+			
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			e.printStackTrace();
+		}
+		return hash;
+	}
+	
 	public static String bytesToHex(byte[] bytes) {
 		StringBuffer result = new StringBuffer();
 		for (byte byt : bytes) result.append(Integer.toString((byt & 0xff) + 0x100, 16).substring(1));
@@ -238,7 +273,7 @@ public class MerckleTree {
 		public MerckleTreeNode fils_droit;
 		public  byte[] texte;//contient le texte du noeud si c'est une feuille, =null sinon
 
-
+		
 		public MerckleTreeNode(byte[] texte) {
 			this.texte = texte;
 			try {
@@ -255,10 +290,10 @@ public class MerckleTree {
 			String leftType = "<null>";
 			String rightType = "<null>";
 			if (fils_gauche != null) {
-				leftType = String.valueOf(fils_droit.type);
+				leftType = String.valueOf(fils_gauche.type);
 			}
 			if (fils_droit != null) {
-				rightType = String.valueOf(fils_gauche.type);
+				rightType = String.valueOf(fils_droit.type);
 			}
 			return String.format("MerkleTree.Node<type:%d, sig:%s, left (type): %s, right (type): %s>",
 					type, sig, leftType, rightType);

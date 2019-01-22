@@ -11,7 +11,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
+
+import org.bouncycastle.asn1.ocsp.Request;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -20,6 +23,8 @@ import com.google.gson.JsonObject;
 import blockchain.Transaction;
 import p2p.node.Node;
 import p2p.node.NodeInfos;
+import p2p.node.reception.ReceptionConversion;
+import p2p.protocole.Operation;
 
 public class CreateTransaction implements Runnable{
 
@@ -30,23 +35,32 @@ public class CreateTransaction implements Runnable{
 	public static Node instance = Node.getInstance();
 	@Override
 	public void run() {
+		System.out.println("**************************\n"
+				+ "Vous pouvez créer une transaction à tout moment en appuyant sur 1");
+		int myint = -1;
 		try {
-			Scanner keyboard = new Scanner(System.in);
-			Transaction transaction1 = create_transaction();
-			System.out.println("**************************\n"
-					+ "Vous pouvez créer une transaction à tout moment en appuyant sur 1");
-			int myint = -1;
-			while((myint = keyboard.nextInt()) != 1) {
-				System.out.println("choix pas valable");
+			Scanner scanner = new Scanner(System.in);
+			try {
+				while (true) {
+					String line = scanner.nextLine();
+					if( line.equals("1")) {
+						System.out.println("- Envoi de la transaction");
+						String transaction1 = create_transaction();
+						broadcast_transaction(transaction1);
+						System.out.println("Transaction à envoyer : "+transaction1);
+					}
+				}
+			} catch(IllegalStateException | NoSuchElementException e) {
+				System.out.println("System.in was closed; exiting");
 			}
-			broadcast_transaction(transaction1);
+
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	private static Transaction create_transaction() {
+	public static String create_transaction() {
 		//TODO c'est quoi creators_signature ?
 		//TODO changer par les données saisies par le user 
 		Transaction t = new Transaction();
@@ -70,29 +84,34 @@ public class CreateTransaction implements Runnable{
 		}
 		t.setJson(j.toString().getBytes());
 
-		return t;
+		String trans_json = toJson(t);
+		return trans_json;
 	}
 
-	public void broadcast_transaction(Transaction transaction) {
+	public void broadcast_transaction(String transaction_json) {
 		PrintWriter out = null;
-		BufferedReader in = null;
 		Socket socket;
 		try {
-			System.out.println("trying to broadcast"+instance.getContacts().size());
+			System.out.println("trying to broadcast : "+instance.getContacts().size() + 
+					ReceptionConversion.contactsToString(instance.getContacts()));
 			List<NodeInfos> contacts = instance.getContacts();
 			for( NodeInfos ni : contacts ){
 				System.out.println("ni : "+ni.getIpAdress()+" "+ni.getPort());
 				socket = new Socket(ni.getIpAdress(), ni.getPort());
 				out = new PrintWriter(socket.getOutputStream());
-				in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-				String trans_json = toJson(transaction);
+				final GsonBuilder builder = new GsonBuilder();
+				final Gson gson = builder.create();
+				String ipadress = instance.getMyinformations().getIpAdress();
+				int port = instance.getMyinformations().getPort();
+				Operation op_trans = new Operation("transaction",ipadress,port);
+				op_trans.setRest(transaction_json);
 
-				//Request req_trans = new Request("transaction","myipaddress",2009);
-				//req_trans.setRest(trans_json);
-				String trans = DispatchConversion.toBinary(trans_json,signer(trans_json));
-
-				out.write((new Gson()).toJson(trans));
+				String	op_trans_json = gson.toJson(op_trans);
+				byte[] signature = DispatchConversion.signer(op_trans_json, instance.getW().getPrivateK());
+				String trans = DispatchConversion.toBinary(op_trans_json,signature );
+				System.out.println("binaire à envoyer : "+trans);
+				out.write(trans);
 				out.flush();
 				socket.close();
 			}
@@ -115,14 +134,14 @@ public class CreateTransaction implements Runnable{
 			Signature dsa = Signature.getInstance("SHA1withECDSA");
 			dsa.initSign(instance.getW().getPrivateK());
 			dsa.update(data);
-			
+
 			signatureBytes = dsa.sign();
 
 			/** verificationo optionnal */
 			dsa.initVerify(instance.getW().getPublicK());
 			dsa.update(data);
 			System.out.println(dsa.verify(signatureBytes));
-		
+
 		} catch (InvalidKeyException | UnsupportedEncodingException | NoSuchAlgorithmException | SignatureException e) {
 			e.printStackTrace();
 		}

@@ -49,35 +49,39 @@ public class AcceptNode implements Runnable {
 							BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 							String bin = in.readLine();
 							System.out.println("binaire reçu : "+bin);
-							
+
 							/** Recuperer l'operation en string */
 							ReceptionConversion.operationToString(bin); 
 							String json = ReceptionConversion.json;
 							String signature = ReceptionConversion.signature;
-							
+
 							Operation request = toRequest(json);
 							String paquet = request.getPaquet(); 
 
 							if(paquet.equals("hello")) {
-								System.out.println("new contact"+instance.getContacts().get(0));
 								/**
 								 * lui répondre "ok"
 								 */
-								System.out.println("response "+make_responce_ok());
-								PrintWriter out = new PrintWriter(socket.getOutputStream());
-								System.out.println("response "+make_responce_ok());
-								out.write(make_responce_ok());
-								
-								
+								response_ok(new NodeInfos(request.getIpaddress(), request.getPort()));
+
 							}else if (paquet.equals("transaction")) {
 								receive_transaction(request.getRest());
 
 							}else if (paquet.equals("ok")) {
-								System.out.println("okay i'll search another freinds");
-								List<NodeInfos> list = gson.fromJson(request.getContacts(), 
-										new TypeToken<List<NodeInfos>>(){}.getType());
-								instance.search_freinds(list);
-							}else if (paquet.equals("ok")) {
+								String flag = request.getFlag();
+								if(flag.equals("saturated")) {
+									System.out.println("okay i'll search another freinds");
+									List<NodeInfos> list = gson.fromJson(request.getContacts(), 
+											new TypeToken<List<NodeInfos>>(){}.getType());
+									instance.search_freinds(list);
+								}else if(flag.equals("good")) {
+									NodeInfos new_node = new NodeInfos(request.getIpaddress(), request.getPort());
+									System.out.println("--> Je rajoute ce noeud à mes contacts : "+new_node.toString());
+									addContact(request.getIpaddress(), request.getPort());
+									System.out.println("--> contacts :[ "+ReceptionConversion.contactsToString(instance.getContacts()));
+								}
+
+							}else if (paquet.equals("block")) {
 								System.out.println("j'ai reçu un nouveau block");
 								Block new_block = gson.fromJson(request.getRest(),Block.class);
 								instance.getBlockchain().addBlock(new_block);
@@ -86,7 +90,7 @@ public class AcceptNode implements Runnable {
 							/**
 							 * enregistrer le contact
 							 */
-							addContact(request.getIpaddress(), request.getPort());
+							//addContact(request.getIpaddress(), request.getPort());
 
 						} catch (IOException e) {
 							e.printStackTrace();
@@ -104,6 +108,28 @@ public class AcceptNode implements Runnable {
 		}
 	}
 
+	private void response_ok(NodeInfos nodeInfos) {
+		PrintWriter out = null;
+		System.out.println("**********");
+		String response_ok = make_responce_ok();
+		System.out.println("- Reponse à 'hello' "+response_ok);
+
+		Socket socket;
+		try {
+			socket = new Socket(nodeInfos.getIpAdress(), nodeInfos.getPort());
+
+			out = new PrintWriter(socket.getOutputStream());
+			out.write(response_ok);
+			out.flush();
+			socket.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+
 	private void addContact(String ipaddress, int port) {
 		NodeInfos ni = new NodeInfos(ipaddress, port);
 		if( ! instance.getContacts().contains(ni))
@@ -114,11 +140,10 @@ public class AcceptNode implements Runnable {
 		final GsonBuilder builder = new GsonBuilder();
 		final Gson gson = builder.create();
 		Operation r = new Operation();
-		
-		
+
+
 
 		r.setPaquet("ok");
-		//TODO replace with ip adress of machine getip..
 		r.setIpaddress("localhost");
 		r.setPort(2009);
 		r.setVersion("1.0");
@@ -137,13 +162,13 @@ public class AcceptNode implements Runnable {
 	public void receive_transaction(String trans) throws IOException {
 		Transaction t = null ;
 		try {
-			System.out.println("je viens de recevoir une transaction" + trans);
+			System.out.println("--> je viens de recevoir une transaction" + trans);
 			t = toTransaction(trans);
 			if( ! instance.getTransactions().contains(t) )
 				instance.getTransactions().add(t);
 
 
-			System.out.println("creator_sig : " + t.getPublicKey());
+			System.out.println("public key : " + t.getPublicKey());
 			System.err.println(((ECPublicKey) t.getPublicKey()).getW().getAffineX());
 		} catch (JsonSyntaxException  | NoSuchAlgorithmException | InvalidKeySpecException e) {
 			e.printStackTrace();

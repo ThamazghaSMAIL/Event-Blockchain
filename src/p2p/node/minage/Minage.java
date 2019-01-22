@@ -34,7 +34,7 @@ public class Minage implements Runnable{
 				
 
 				System.out.println("c'est au tour de "+tour + " de miner un bloc ");
-				if( tour == instance.getId()) {
+				if( tour == instance.getNounce()) {
 					miner();
 				}
 				num_node = (num_node+1)%Consensus.NODES_NUMBER;

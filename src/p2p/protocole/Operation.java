@@ -78,6 +78,10 @@ public class Operation {
 	public void setRest(String rest) {
 		this.rest = rest;
 	}
-	
+	@Override
+	public String toString() {
+		return "Operation [paquet=" + paquet + ", ipaddress=" + ipaddress + ", port=" + port + ", rest=" + rest
+				+ ", version=" + version + ", flag=" + flag + ", contacts=" + contacts + "]";
+	}
 	
 }

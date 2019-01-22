@@ -3,6 +3,11 @@ package p2p.node.dispatch;
 import java.io.UnsupportedEncodingException;
 import java.security.PrivateKey;
 import java.security.Signature;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import p2p.protocole.Operation;
 /**
  * 
  * contient les methodes de codage en binaire lors de l'envoi
@@ -51,8 +56,6 @@ public class DispatchConversion {
 			while ( bin.length() < 8 ) {
 				bin = "0" + bin;
 			}
-				
-
 			result = result + bin;
 		}
 		return result;
@@ -70,7 +73,7 @@ public class DispatchConversion {
 		}
 		return result;
 	}
-	public static byte[] signer(String trans_json,PrivateKey privatekey) {
+	public static byte[] signer(String trans_json , PrivateKey privatekey) {
 		byte[] signatureBytes = null;
 		try {
 			byte[] data = trans_json.getBytes("UTF8");
@@ -96,5 +99,12 @@ public class DispatchConversion {
 		}
 		return signatureBytes;
 	}
+	
+	public static String operationToJson(Operation o) {
+		final GsonBuilder builder = new GsonBuilder();
+		final Gson gson = builder.create();
+		return gson.toJson(o);
+	}
+	
 	
 }

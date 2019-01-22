@@ -24,4 +24,10 @@ public class NodeInfos {
 	public void setPort(int port) {
 		this.port = port;
 	}
+	@Override
+	public String toString() {
+		return "NodeInfos [ipAdress=" + ipAdress + ", port=" + port + "]";
+	}
+	
+	
 }
