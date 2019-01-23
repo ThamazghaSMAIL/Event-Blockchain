@@ -63,7 +63,11 @@ public class AcceptNode implements Runnable {
 								 * lui répondre "ok"
 								 */
 								response_ok(new NodeInfos(request.getIpaddress(), request.getPort()));
-
+								
+								NodeInfos new_node = new NodeInfos(request.getIpaddress(), request.getPort());
+								System.out.println("--> Je rajoute ce noeud à mes contacts : "+new_node.toString());
+								addContact(request.getIpaddress(), request.getPort());
+								System.out.println("--> contacts :[ "+ReceptionConversion.contactsToString(instance.getContacts()));
 							}else if (paquet.equals("transaction")) {
 								receive_transaction(request.getRest());
 
@@ -113,7 +117,7 @@ public class AcceptNode implements Runnable {
 		System.out.println("**********");
 		String response_ok = make_responce_ok();
 		System.out.println("- Reponse à 'hello' "+response_ok);
-
+		
 		Socket socket;
 		try {
 			socket = new Socket(nodeInfos.getIpAdress(), nodeInfos.getPort());

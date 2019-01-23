@@ -51,9 +51,9 @@ public class MerckleTree {
 		/**
 		 * Calculs des noeuds internes jusqu'à la racine
 		 */
-		if( feuilles.size() > 0 )
+		if( feuilles.size() > 0 ) {
 			calcul_parents(feuilles);
-		else 
+		}else 
 		{
 			this.racine = new MerckleTreeNode();
 			this.racine.texte = "".getBytes();
@@ -89,7 +89,6 @@ public class MerckleTree {
 				 * construire le père des deux feuilles
 				 */
 				MerckleTreeNode  parent = construireNoeudInterne(leaf1, leaf2);
-
 				parents.add(parent);
 			}
 			return calcul_parents(parents);
@@ -97,27 +96,6 @@ public class MerckleTree {
 
 	}
 
-
-	//	/**
-	//	 * ok
-	//	 * @param textefeuille
-	//	 * @return
-	//	 * @throws NoSuchAlgorithmException 
-	//	 */
-	//	private static MerckleTreeNode  construireFeuille(byte[] textefeuille) throws NoSuchAlgorithmException {
-	//		MerckleTreeNode  feuille = new MerckleTreeNode ();
-	//		/**
-	//		 * affecter les champs de la feuille
-	//		 */
-	//		feuille.type = LEAF_SIG_TYPE;
-	//
-	//		/**
-	//		 * dans le cas d'une feuille on a les données (texte) et la signature
-	//		 */
-	//		//feuille.texte=textefeuille;
-	//		//feuille.sig = hashFeuille(textefeuille,"0"); //.getBytes(StandardCharsets.UTF_8);
-	//		return feuille;
-	//	}
 
 
 	/**
@@ -134,12 +112,11 @@ public class MerckleTree {
 			parent.fils_gauche = fils_gauche;
 		} else {
 			parent =  new MerckleTreeNode();
+
 			parent.sig = hashInterne(fils_gauche.sig, fils_droit.sig);
 			parent.fils_gauche = fils_gauche;
 			parent.fils_droit = fils_droit;
 		}
-
-
 
 		parent.type = INTERNAL_SIG_TYPE;
 		return parent;
@@ -159,7 +136,7 @@ public class MerckleTree {
 			sha256_hmac.init(secret_key);
 			// 4. Generate hex encoded string.
 			hash = sha256_hmac.doFinal(textefeuille);
-			
+
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		} catch (UnsupportedEncodingException e) {
@@ -183,7 +160,7 @@ public class MerckleTree {
 			sha256_hmac.init(secret_key);
 			// 4. Generate hex encoded string.
 			hash = sha256_hmac.doFinal(textefeuille.getBytes());
-		
+
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		} catch (UnsupportedEncodingException e) {
@@ -196,7 +173,8 @@ public class MerckleTree {
 	private byte[] hashInterne( byte[] sig_gauche,  byte[] sig_droit) {
 		byte[] hash = null ;
 		try {
-			hash = hashInternalNode(Hex.encodeHexString(concatenate(sig_gauche, sig_droit)));
+			byte[] concat = concatenate(sig_gauche, sig_droit);
+			hash = hashInternalNode(concat.toString());
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
@@ -237,7 +215,7 @@ public class MerckleTree {
 			sha256_hmac.init(secret_key);
 			// 4. Generate hex encoded string.
 			hash = sha256_hmac.doFinal(textefeuille);
-			
+
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		} catch (UnsupportedEncodingException e) {
@@ -247,7 +225,7 @@ public class MerckleTree {
 		}
 		return hash;
 	}
-	
+
 	public static String bytesToHex(byte[] bytes) {
 		StringBuffer result = new StringBuffer();
 		for (byte byt : bytes) result.append(Integer.toString((byt & 0xff) + 0x100, 16).substring(1));
@@ -273,7 +251,7 @@ public class MerckleTree {
 		public MerckleTreeNode fils_droit;
 		public  byte[] texte;//contient le texte du noeud si c'est une feuille, =null sinon
 
-		
+
 		public MerckleTreeNode(byte[] texte) {
 			this.texte = texte;
 			try {
@@ -310,6 +288,14 @@ public class MerckleTree {
 		//			return sb.toString();
 		//		}
 	}  
-
+	public static byte[] hexStringToByteArray(String s) {
+		byte[] b = new byte[s.length() / 2];
+		for (int i = 0; i < b.length; i++) {
+			int index = i * 2;
+			int v = Integer.parseInt(s.substring(index, index + 2), 16);
+			b[i] = (byte) v;
+		}
+		return b;
+	}
 
 }

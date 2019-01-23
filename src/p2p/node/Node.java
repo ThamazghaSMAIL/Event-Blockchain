@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import com.google.common.hash.HashCode;
 import com.google.gson.JsonObject;
 
 import blockchain.Blockchain;
@@ -51,7 +52,7 @@ public class Node implements INode{
 	{   
 		Node result = INSTANCE;
 		if (result == null) {
-				INSTANCE = result = new Node();
+			INSTANCE = result = new Node();
 		}
 		return result;
 	}
@@ -62,37 +63,36 @@ public class Node implements INode{
 		System.out.println("id :");
 		String id = keyboard.nextLine();
 		getInstance().setId(id);
-		
+
 		System.out.println("your ipadress :");
 		String my_ipadress = keyboard.nextLine();
-		
+
 		System.out.println("port :");
 		int my_port = keyboard.nextInt();
 
 		getInstance().setMyinformations(new NodeInfos(my_ipadress, my_port));
-		
+
 		/**
 		 * l'utilisateur saisi un seul contact pour entrer dans la blockchain, le reste se fera automatiquement
 		 */
-		NodeInfos ni = saisie();
+		List<NodeInfos> nodes = saisie();
 
-		//NodeInfos ni = new NodeInfos("localhost", 2000);
+		if( nodes.size() > 0 )
+			for(NodeInfos ni : nodes ) {
 
-		if( ni.getIpAdress().equals("nope") && ni.getPort() == 0 ) {
-			 System.out.println("you're the first node");
-		}else {
-			(new Thread(){
-				public void run(){
-					try {
-						getInstance().premier_contact(ni);
-						//getInstance().getContacts().add(ni);
-					} catch (Exception e) {
-						e.printStackTrace();
+				(new Thread(){
+					public void run(){
+						try {
+							getInstance().premier_contact(ni);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
 					}
-				}
-			}).start();
-		}
-		
+				}).start();
+			}
+
+
+
 		/**
 		 * se mettre à l'écoute
 		 */
@@ -120,19 +120,35 @@ public class Node implements INode{
 		t.start();
 	}
 
-	private static NodeInfos saisie() {
+	private static List<NodeInfos> saisie() {
+		List<NodeInfos> first_freinds = new ArrayList<NodeInfos>();
 		Scanner keyboard = new Scanner(System.in);
 
 		System.out.println("************************");
-		System.out.println("enter at least a contact ");
+		System.out.println("have you any freinds ? (y/n)");
 
-		System.out.println("ip adress :");
-		String ipadress = keyboard.nextLine();
+		String rep = keyboard.nextLine();
 
-		System.out.println("port :");
-		int port = keyboard.nextInt();
-		
-		return new NodeInfos(ipadress, port);
+
+		String response = null;
+		if( rep.equals("y"))
+			do {
+				System.out.println("ip adress :");
+				String ipadress = keyboard.nextLine();
+
+				System.out.println("port :");
+				int port = keyboard.nextInt();
+				
+				
+				System.out.println("fini ? tap y or n?");
+				System.out.println(keyboard.nextLine());
+				response = keyboard.nextLine();
+				
+				System.out.println("response "+response);
+				first_freinds.add(new NodeInfos(ipadress, port));
+			}while (response.equals("n"));
+
+		return first_freinds;
 	}
 
 
@@ -254,7 +270,7 @@ public class Node implements INode{
 	public void setId(String id) {
 		this.id = id;
 	}
-	
+
 	public int getNounce() {
 		return nounce;
 	}
@@ -262,7 +278,7 @@ public class Node implements INode{
 	public void setNounce(int nounce) {
 		this.nounce = nounce;
 	}
-	
+
 	public NodeInfos getMyinformations() {
 		return myinformations;
 	}
