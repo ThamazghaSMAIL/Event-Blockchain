@@ -7,11 +7,10 @@ import merckletree.ConversionManager;
 
 public class Consensus {
 
-	public final static int NODES_NUMBER = 30;
+	public final static int NODES_NUMBER = 2;
 
 	public static int hmac_sha256(int num_node) {
 		final HashCode hashed = Hashing.sha256().hashInt(num_node);
-		System.out.println("hashed "+hashed);
-        return hashed.asInt()%NODES_NUMBER;
+        return hashed.asInt()%NODES_NUMBER+1;
 	}
 }

@@ -148,8 +148,8 @@ public class AcceptNode implements Runnable {
 
 
 		r.setPaquet("ok");
-		r.setIpaddress("localhost");
-		r.setPort(2009);
+		r.setIpaddress(instance.getMyinformations().getIpAdress());
+		r.setPort(instance.getMyinformations().getPort());
 		r.setVersion("1.0");
 		if( instance.getContacts().size() >= instance.LIMIT) {
 			r.setFlag("saturated");
@@ -168,7 +168,8 @@ public class AcceptNode implements Runnable {
 		try {
 			System.out.println("--> je viens de recevoir une transaction" + trans);
 			t = toTransaction(trans);
-			if( ! instance.getTransactions().contains(t) )
+			
+			if( ! instance.getTransactions().contains(t) & verify(t) )
 				instance.getTransactions().add(t);
 
 
@@ -177,6 +178,10 @@ public class AcceptNode implements Runnable {
 		} catch (JsonSyntaxException  | NoSuchAlgorithmException | InvalidKeySpecException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private boolean verify(Transaction t) {
+		return true;
 	}
 
 	private Transaction toTransaction(String json) {

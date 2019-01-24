@@ -66,7 +66,7 @@ public class Node implements INode{
 
 		System.out.println("your ipadress :");
 		String my_ipadress = keyboard.nextLine();
-
+		
 		System.out.println("port :");
 		int my_port = keyboard.nextInt();
 
@@ -111,10 +111,11 @@ public class Node implements INode{
 
 
 
-		//		/** Minage **/
-		//		(new Thread(new Minage())).start();
-		//
-		//		
+		/** Minage **/
+		Thread minage = new Thread(new Minage());
+		minage.start();
+
+
 		/** create transaction */
 		Thread t = new Thread(new CreateTransaction());
 		t.start();
@@ -138,12 +139,12 @@ public class Node implements INode{
 
 				System.out.println("port :");
 				int port = keyboard.nextInt();
-				
-				
+
+
 				System.out.println("fini ? tap y or n?");
 				System.out.println(keyboard.nextLine());
 				response = keyboard.nextLine();
-				
+
 				System.out.println("response "+response);
 				first_freinds.add(new NodeInfos(ipadress, port));
 			}while (response.equals("n"));
