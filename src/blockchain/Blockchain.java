@@ -37,9 +37,9 @@ public class Blockchain implements Serializable{
 					instance.getTransactions() ,
 					instance.getW().getPublic_key(), 
 					instance.getNounce(),level);
-			
+
 			this.blocks.add(new_block);
-			
+
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
@@ -47,10 +47,16 @@ public class Blockchain implements Serializable{
 	}
 
 	public void addBlock(Block block) {
-		if(block != null) {
-			this.blocks.add(block);
+		if(block != null && ! this.blocks.contains(block)) {
+			if( block.verify_block(this.getLatestBlock() )) {
+				this.blocks.add(block);
+			}else {
+				System.out.println("[block] bloc invalide");
+			}
+		}else {
+			System.out.println("[block] j'ai deja ce bloc");
 		}
-		
+
 		Persistance.WriteBlockChainToFile(this);
 	}
 
@@ -60,26 +66,26 @@ public class Blockchain implements Serializable{
 		String r_json = gson.toJson(this);
 		return r_json;
 	}
-	
+
 	public static void main(String[] args) {
 		Blockchain bc = new Blockchain();
-		
+
 		try {
 			List<Transaction> transactions = new ArrayList<Transaction>();
 			Transaction t = new Transaction( Node.getInstance().getW().getPublic_key(),
 					System.currentTimeMillis(),
 					Transaction.CREATION_TYPE,
 					"json".getBytes());
-					
+
 			transactions.add(t);
 			bc.addBlock(new Block(null, transactions, Node.getInstance().getW().getPublic_key(), Node.getInstance().getNounce(),0));
-			
+
 			System.out.println(bc.toJson());
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public boolean genesisBlockValide(Block block){
 		if(block.getLevel() != 0 || block.getPrevious_hash() != null ) {
 			return false;
@@ -107,7 +113,6 @@ public class Blockchain implements Serializable{
 				if( blocks.get(i).getPrevious_hash() != null )
 					if( blocks.get(i).getPrevious_hash().equals(blocks.get(i-1).getHash()))
 						return false;
-					
 			}
 		return true;
 	}

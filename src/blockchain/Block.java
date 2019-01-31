@@ -254,5 +254,24 @@ public class Block implements Serializable{
 		return false;
 	}
 	
-	
+	public boolean verifyPrevious(Block previous) {
+		if( ! this.getPrevious_hash().equals(previous.getHash()))
+			return false;
+		return true;
+	}
+
+	public boolean verify_block(Block previous) {
+		if( verifyBlockTime() ) {
+			if( ! verifyPrevious(previous) ) {
+				System.out.println("bloc non valide *previous*");
+				return false;
+			}else
+				return true;
+		}else {
+			System.out.println("bloc non valide *timstamp*");
+			return false;
+		}
+	}
+
+
 }

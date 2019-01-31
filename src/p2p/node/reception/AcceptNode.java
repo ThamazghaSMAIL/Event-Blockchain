@@ -108,13 +108,11 @@ public class AcceptNode implements Runnable {
 										System.out.println("j'ai reçu un nouveau block");
 										Block new_block = gson.fromJson(request.getRest(),Block.class);
 										instance.getBlockchain().addBlock(new_block);
-										//										Minage.broadcast_block(new_block);
 									}
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
 					}
-
 				}).start();
 			}
 

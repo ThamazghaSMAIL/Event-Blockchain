@@ -19,8 +19,8 @@ public class Minage implements Runnable{
 
 	public Minage() {
 		this.time = 60;
-		
 	}
+	
 	public static Node instance = Node.getInstance();
 	public int time;
 	public int tour ;
@@ -77,7 +77,6 @@ public class Minage implements Runnable{
 				/** Réseau **/
 				socket = new Socket(ni.getIpAdress(), ni.getPort());
 				out = new PrintWriter(socket.getOutputStream());
-				
 				out.write(bin);
 				out.flush();
 				socket.close();
