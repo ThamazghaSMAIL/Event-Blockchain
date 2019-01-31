@@ -1,10 +1,18 @@
 package p2p.node.reception;
 
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.codec.binary.StringUtils;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import blockchain.Transaction;
 import p2p.node.NodeInfos;
 
 /**
@@ -13,23 +21,31 @@ import p2p.node.NodeInfos;
  *
  */
 public class ReceptionConversion {
-	public static String json;
-	public static String signature;
-	
-	public static void operationToString(String trans) {
-		String size_string = trans.substring(0,32);
-		int size_decimal = getSize(size_string);			   
-		System.out.println("- Taille de la Transaction recue en decimal: "+size_decimal);
-
-		json = getTransactionJson(trans,size_decimal);
-		signature = getSignature(trans,size_decimal);
-	}
-
-	private static String getSignature(String trans, int size_decimal) {
-		String sig = trans.substring(31+size_decimal);
 
 
-		StringBuilder sb = new StringBuilder(); // Some place to store the chars
+	public static byte[] getSignature(String trans) {
+
+		try {
+			String size_string = trans.substring(0,32);
+			int size_decimal = ReceptionConversion.getSize(size_string);	
+			
+			String sig = trans.substring(32+size_decimal);
+			if(sig.contains("\"")) sig = sig.replaceAll("\"","");
+			StringBuilder sb = new StringBuilder(); // Some place to store the chars
+			byte[] array = new BigInteger(sig,2).toByteArray();
+			return array;
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		}
+		return null;
+
+
+
+
+
+		/*
+		 * last version
+
 
 		Arrays.stream( // Create a Stream
 				sig.split("(?<=\\G.{8})") // Splits the input string into 8-char-sections (Since a char has 8 bits = 1 byte)
@@ -38,8 +54,20 @@ public class ReceptionConversion {
 						);
 
 		String output = sb.toString(); // Output text (t)
-		System.out.println("- Signature en json : "+output);
-		return output;
+		return output.getBytes();
+
+		/*
+//		StringBuilder sb = new StringBuilder(); // Some place to store the chars
+//
+//		Arrays.stream( // Create a Stream
+//				sig.split("(?<=\\G.{8})") // Splits the input string into 8-char-sections (Since a char has 8 bits = 1 byte)
+//				).forEach(s -> // Go through each 8-char-section...
+//				sb.append((char) Integer.parseInt(s, 2)) // ...and turn it into an int and then to a char
+//						);
+//		String output = sb.toString(); // Output text (t)
+//		System.out.println("- Signature en json : "+output);
+//		return output.getBytes();
+		 */
 	}
 
 	public static String getTransactionJson(String trans, int size_decimal) {
@@ -60,15 +88,13 @@ public class ReceptionConversion {
 
 	public static int getSize(String size_string) {
 		int i = 0;
-		System.out.println("taille en binaire : "+size_string);
 		while( size_string.charAt(i) == '0') {
 			size_string = size_string.substring(1);
 			i++;
 		}
-		System.out.println("taille sans le bourage : "+size_string);
 		return Integer.parseInt(size_string, 2);
 	}
-	
+
 
 
 	/** verification */
@@ -93,4 +119,18 @@ public class ReceptionConversion {
 		return "null ]";
 	}
 
+	public static Transaction toTransaction(String json) {
+		final GsonBuilder builder = new GsonBuilder();
+		final Gson gson = builder.create();
+		return gson.fromJson(json, Transaction.class);
+	}
+
+	public static String getSignature_bin(String trans) {
+		// TODO Auto-generated method stub
+		String size_string = trans.substring(0,32);
+		int size_decimal = ReceptionConversion.getSize(size_string);	
+		
+		String sig = trans.substring(32+size_decimal);
+		return sig;
+	}
 }

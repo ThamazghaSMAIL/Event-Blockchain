@@ -1,12 +1,15 @@
 package p2p.node.dispatch;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.Signature;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import p2p.node.NodeInfos;
 import p2p.protocole.Operation;
 /**
  * 
@@ -17,19 +20,14 @@ public class DispatchConversion {
 
 	public static String toBinary(String trans_json, byte[] signature) {
 		String result = "";
-		System.out.println("- Transaction avant encodage : "+trans_json);
 		String trans_binary = transactionToBinary(trans_json);
 		result = result + sizeToBinaire(trans_binary.length());
 		result = result + trans_binary;
 		result = result + signatureToBinary(signature);
-		System.out.println("- Taille + Transaction + Signature après encodage : "+result);
 		return result;
 	}
 
-
-
 	public static String sizeToBinaire(int size) {
-		System.out.println("- Taille en decimal de la transaction: "+size);
 		String s =  Integer.toBinaryString(size);
 		return bourage(s);
 	}
@@ -62,15 +60,8 @@ public class DispatchConversion {
 	}
 
 	public static String signatureToBinary(byte[] sig) {
-		String result = "";
-		String bin = "" ;
-		for (byte b : sig) {
-			bin = Integer.toBinaryString(b);
-			while ( bin.length() < 8 ) {
-				bin = "0" + bin;
-			}
-			result = result + bin;
-		}
+		BigInteger bi = new BigInteger(sig);
+		String result = bi.toString(2);
 		return result;
 	}
 	public static byte[] signer(String trans_json , PrivateKey privatekey) {
@@ -82,8 +73,6 @@ public class DispatchConversion {
 
 			dsa.initSign(privatekey);
 
-			//String str = trans_json;
-			//byte[] strByte = trans_json.getBytes("UTF-8");
 			dsa.update(data);
 
 			/*
@@ -104,6 +93,18 @@ public class DispatchConversion {
 		final GsonBuilder builder = new GsonBuilder();
 		final Gson gson = builder.create();
 		return gson.toJson(o);
+	}
+	
+	public static Operation toRequest(String json) {
+		final GsonBuilder builder = new GsonBuilder();
+		final Gson gson = builder.create();
+		return gson.fromJson(json, Operation.class);
+	}
+
+	public NodeInfos toNodeInfos(String json) {
+		final GsonBuilder builder = new GsonBuilder();
+		final Gson gson = builder.create();
+		return gson.fromJson(json, NodeInfos.class);
 	}
 	
 	

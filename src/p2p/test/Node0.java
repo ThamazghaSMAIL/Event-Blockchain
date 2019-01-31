@@ -1,26 +1,27 @@
-package p2p.node;
+package p2p.test;
+
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import blockchain.Block;
 import blockchain.Blockchain;
 import blockchain.Transaction;
 import p2p.interfaces.INode;
+import p2p.node.NodeInfos;
+import p2p.node.Wallet;
 import p2p.node.dispatch.CreateTransaction;
 import p2p.node.dispatch.DispatchConversion;
 import p2p.node.minage.Minage;
 import p2p.node.reception.AcceptNode;
 import p2p.protocole.Operation;
 
-public class Node implements INode{
+public class Node0 implements INode{
 
 	public final static int LIMIT = 10;
 	/**
@@ -35,21 +36,22 @@ public class Node implements INode{
 	public int upper_nounce;
 	public NodeInfos myinformations;
 
-	private Node() {
+	private Node0() {
 		this.contacts = new CopyOnWriteArrayList<NodeInfos>();
 		this.wallet = new Wallet();
 		this.transactions = new ArrayList<Transaction>();
+		this.blockchain = new Blockchain();
 		this.upper_nounce = 1;
 		this.nounce = 0;
 	}
 
 	/** Instance unique pré-initialisée */
-	private static volatile Node INSTANCE ;
-	public synchronized static Node getInstance()
+	private static volatile Node0 INSTANCE ;
+	public synchronized static Node0 getInstance()
 	{   
-		Node result = INSTANCE;
+		Node0 result = INSTANCE;
 		if (result == null) {
-			INSTANCE = result = new Node();
+			INSTANCE = result = new Node0();
 		}
 		return result;
 	}
@@ -57,19 +59,20 @@ public class Node implements INode{
 	public static void main(String[] args) {
 		Scanner keyboard = new Scanner(System.in);
 
-		System.out.println("id :");
-		String id = keyboard.nextLine();
-		getInstance().setId(id);
+//		System.out.println("id :");
+//		String id = keyboard.nextLine();
+//		getInstance().setId(id);
+//
+//		System.out.println("your ipadress :");
+//		String my_ipadress = keyboard.nextLine();
+//		
+//		System.out.println("port :");
+//		int my_port = keyboard.nextInt();
 
-		System.out.println("your ipadress :");
-		String my_ipadress = keyboard.nextLine();
+//		getInstance().setMyinformations(new NodeInfos(my_ipadress, my_port));
 
-		System.out.println("port :");
-		int my_port = keyboard.nextInt();
-
-		getInstance().setMyinformations(new NodeInfos(my_ipadress, my_port));
-
-
+		getInstance().setMyinformations(new NodeInfos("localhost", 3000));
+		System.out.println(getInstance().getMyinformations());
 		List<NodeInfos> nodes = saisie();
 
 		if( nodes.size() > 0 ) {
@@ -85,24 +88,10 @@ public class Node implements INode{
 				}).start();
 			}
 		}else {
-			try {
-				/** c'est le premier noeud, son nounce = 1, il crée alors la blockchain
-				 * et le block genesis
-				 */
-				INSTANCE.setNounce(1);
-				INSTANCE.setBlockchain(new Blockchain());
-				Block genesis = new Block(null, new ArrayList<>(), INSTANCE.getW().getPublic_key(),
-						INSTANCE.getNounce(), 0);
-				INSTANCE.getBlockchain().addBlock(genesis);
-				
-				/** Minage **/
-				
-				Thread minage = new Thread(new Minage());
-				minage.start();
-			} catch (NoSuchAlgorithmException e) {
-				e.printStackTrace();
-			}
+			INSTANCE.setNounce(1);
 		}
+
+
 
 		/**
 		 * se mettre à l'écoute
@@ -117,6 +106,15 @@ public class Node implements INode{
 				}
 			}
 		}).start();
+
+
+
+
+
+		/** Minage **/
+		Thread minage = new Thread(new Minage());
+		minage.start();
+
 
 		/** create transaction */
 		Thread t = new Thread(new CreateTransaction());
@@ -147,8 +145,10 @@ public class Node implements INode{
 				System.out.println(keyboard.nextLine());
 				response = keyboard.nextLine();
 
+				System.out.println("response "+response);
 				first_freinds.add(new NodeInfos(ipadress, port));
 			}while (response.equals("n"));
+
 		return first_freinds;
 	}
 
@@ -159,7 +159,7 @@ public class Node implements INode{
 		PrintWriter out = null;
 		Socket socket;
 		try {
-			System.out.println("premier contact avec "+ni.toString());
+			System.out.println("premier contact");
 			socket = new Socket(ni.getIpAdress(), ni.getPort());
 			out = new PrintWriter(socket.getOutputStream());
 
@@ -181,6 +181,10 @@ public class Node implements INode{
 			 * construire l'operation : taille + json + signature, le tout en binaire
 			 */
 			String result = DispatchConversion.toBinary(data, signature);
+
+
+			//			System.out.println("**************verification ");
+			//			ReceptionConversion.operationToString(result);
 			out.write(result);
 			out.flush();
 			socket.close();
@@ -293,7 +297,7 @@ public class Node implements INode{
 	public void setContacts(CopyOnWriteArrayList<NodeInfos> contacts) {
 		this.contacts = contacts;
 	}
-
+	
 	public int getUpper_nounce() {
 		return upper_nounce;
 	}
@@ -301,6 +305,7 @@ public class Node implements INode{
 	public void setUpper_nounce(int upper_nounce) {
 		this.upper_nounce = upper_nounce;
 	}
+
 }
 
 

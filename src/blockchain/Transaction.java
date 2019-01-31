@@ -1,5 +1,6 @@
 package blockchain;
 
+import java.io.Serializable;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -22,8 +23,12 @@ import com.google.gson.JsonObject;
  * 		-gestion de clés
  *
  */
-public class Transaction {
+public class Transaction implements Serializable{
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	public static String CREATION_TYPE = "creation";
 	public static String PARTICIPATION_TYPE = "participation";
 	public static String GESTIONCLE_TYPE = "gestion_cle";
@@ -31,37 +36,24 @@ public class Transaction {
 	public Transaction() {}
 	
 	
-	public Transaction(byte[] creators_public_key, String creators_signature, long timestamp, String type,
+	public Transaction(byte[] creators_public_key, long timestamp, String type,
 			byte[] json) {
 		this.creators_public_key = creators_public_key;
-		this.creators_signature = creators_signature;
 		this.timestamp = timestamp;
 		this.type = type;
-		this.json = json;
 	}
 	
 	protected byte[] creators_public_key;
-	protected String creators_signature;
 	protected long timestamp;
 	protected String type;
-	protected byte[] json;
+	protected byte[] json ;
 	
 	
 
 	@Override
 	public String toString() {
 		return "Transaction [creators_public_key=" + Arrays.toString(creators_public_key) + ", creators_signature="
-				+ creators_signature + ", timestamp=" + timestamp + ", type=" + type + ", json=" + Arrays.toString(json)
-				+ "]";
-	}
-
-
-	public byte[] getJson() {
-		return this.json;
-	}
-
-	public void setJson(byte[] json) {
-		this.json = json;
+				+ ", timestamp=" + timestamp + ", type=" + type + "]";
 	}
 
 	public byte[] getCreators_public_key() {
@@ -70,14 +62,6 @@ public class Transaction {
 
 	public void setCreators_public_key(byte[] creators_public_key) {
 		this.creators_public_key = creators_public_key;
-	}
-
-	public String getCreators_signature() {
-		return creators_signature;
-	}
-
-	public void setCreators_signature(String creators_signature) {
-		this.creators_signature = creators_signature;
 	}
 
 	public long getTimestamp() {
@@ -131,6 +115,16 @@ public class Transaction {
 		jdate.addProperty("format", "dd/MM/yyyy");
 		
 		return jdate.toString();
+	}
+
+
+	public byte[] getJson() {
+		return json;
+	}
+
+
+	public void setJson(byte[] json) {
+		this.json = json;
 	}
 	
 }

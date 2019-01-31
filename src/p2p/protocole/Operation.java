@@ -1,7 +1,7 @@
 package p2p.protocole;
 
 public class Operation {
-	
+
 	public Operation(String paquet, String ipaddress, int port) {
 		this.paquet = paquet;
 		this.ipaddress = ipaddress;
@@ -12,7 +12,7 @@ public class Operation {
 	}
 
 	public Operation() {}
-	
+
 	public String rest;
 	public String paquet;
 	public String ipaddress; 
@@ -22,7 +22,16 @@ public class Operation {
 	public String flag;
 	//quand flag = saturated on affecte les contacts de l'instance
 	public String contacts;
-	
+	public int upper_nounce;
+	/**
+	 * temps qui reste pour le minage
+	 */
+	public int time;
+	/**
+	 * le numéro du noeud ou il en sont dans le minage
+	 */
+	public int node_minage;
+
 	public String getPaquet() {
 		return paquet;
 	}
@@ -83,5 +92,28 @@ public class Operation {
 		return "Operation [paquet=" + paquet + ", ipaddress=" + ipaddress + ", port=" + port + ", rest=" + rest
 				+ ", version=" + version + ", flag=" + flag + ", contacts=" + contacts + "]";
 	}
-	
+
+	public int getUpper_nounce() {
+		return upper_nounce;
+	}
+
+	public void setUpper_nounce(int upper_nounce) {
+		this.upper_nounce = upper_nounce;
+	}
+
+	public int getTime() {
+		return time;
+	}
+
+	public void setTime(int time) {
+		this.time = time;
+	}
+
+	public int getNode_minage() {
+		return node_minage;
+	}
+
+	public void setNode_minage(int node_minage) {
+		this.node_minage = node_minage;
+	}
 }

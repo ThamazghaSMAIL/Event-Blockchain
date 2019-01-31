@@ -44,8 +44,8 @@ public class CreateTransaction implements Runnable{
 				while (true) {
 					String line = scanner.nextLine();
 					if( line.equals("1")) {
-						System.out.println("- Envoi de la transaction");
 						String transaction1 = create_transaction();
+						System.out.println("- Envoi de la transaction"+transaction1);
 						broadcast_transaction(transaction1);
 						System.out.println("Transaction à envoyer : "+transaction1);
 					}
@@ -65,7 +65,7 @@ public class CreateTransaction implements Runnable{
 		//TODO changer par les données saisies par le user 
 		Transaction t = new Transaction();
 		t.setCreators_public_key(instance.getW().getPublic_key());
-		t.setCreators_signature("creators_signature");	
+//		t.setCreators_signature("creators_signature");	
 		t.setTimestamp(System.currentTimeMillis());
 
 		t.setType(Transaction.CREATION_TYPE);
@@ -75,12 +75,12 @@ public class CreateTransaction implements Runnable{
 			j.addProperty("name", "name");
 			j.addProperty("description", "description");
 			j.addProperty("date", Transaction.getDateJson());
-
-		}else if (t.getType().equals(Transaction.PARTICIPATION_TYPE)) {
-			//TODO c'est quoi event-hash 
-			j.addProperty("event-hash", "event-hash");
 			j.addProperty("location", "location");
-			j.addProperty("limits", Transaction.getLimitsJson());
+//			j.addProperty("limits", Transaction.getLimitsJson());
+			j.addProperty("debut", "");
+			j.addProperty("fin", "");
+		}else if (t.getType().equals(Transaction.PARTICIPATION_TYPE)) {
+			j.addProperty("event-hash", "event-hash");
 		}
 		t.setJson(j.toString().getBytes());
 
@@ -95,22 +95,21 @@ public class CreateTransaction implements Runnable{
 			System.out.println("trying to broadcast : "+instance.getContacts().size() + 
 					ReceptionConversion.contactsToString(instance.getContacts()));
 			List<NodeInfos> contacts = instance.getContacts();
+			final GsonBuilder builder = new GsonBuilder();
+			final Gson gson = builder.create();
+			String ipadress = instance.getMyinformations().getIpAdress();
+			int port = instance.getMyinformations().getPort();
+			Operation op_trans = new Operation("transaction",ipadress,port);
+			op_trans.setRest(transaction_json);
+
+			String	op_trans_json = gson.toJson(op_trans);
+			byte[] signature = DispatchConversion.signer(transaction_json, instance.getW().getPrivateK());
+			String trans = DispatchConversion.toBinary(op_trans_json,signature);
+			System.out.println("binaire à envoyer : "+trans + "taille = "+trans.length());
+			
 			for( NodeInfos ni : contacts ){
-				System.out.println("ni : "+ni.getIpAdress()+" "+ni.getPort());
 				socket = new Socket(ni.getIpAdress(), ni.getPort());
 				out = new PrintWriter(socket.getOutputStream());
-
-				final GsonBuilder builder = new GsonBuilder();
-				final Gson gson = builder.create();
-				String ipadress = instance.getMyinformations().getIpAdress();
-				int port = instance.getMyinformations().getPort();
-				Operation op_trans = new Operation("transaction",ipadress,port);
-				op_trans.setRest(transaction_json);
-
-				String	op_trans_json = gson.toJson(op_trans);
-				byte[] signature = DispatchConversion.signer(op_trans_json, instance.getW().getPrivateK());
-				String trans = DispatchConversion.toBinary(op_trans_json,signature );
-				System.out.println("binaire à envoyer : "+trans);
 				out.write(trans);
 				out.flush();
 				socket.close();
@@ -140,7 +139,6 @@ public class CreateTransaction implements Runnable{
 			/** verificationo optionnal */
 			dsa.initVerify(instance.getW().getPublicK());
 			dsa.update(data);
-			System.out.println(dsa.verify(signatureBytes));
 
 		} catch (InvalidKeyException | UnsupportedEncodingException | NoSuchAlgorithmException | SignatureException e) {
 			e.printStackTrace();

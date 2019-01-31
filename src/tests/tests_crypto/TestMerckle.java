@@ -14,17 +14,17 @@ public class TestMerckle {
 		System.out.println("- test merckletree : ");
 		/** empty */
 
-		//TestMerckle.test_empty(); //ok
+		TestMerckle.test_empty(); //ok
 
 		/** une seule feuille*/
 		//		test_leaf_0();
 		//
 		//		test_leaf_1();
 		//		
-		test_leaf_2();
-
-		/** nodes */
-		test_node_0();
+//		test_leaf_2();
+//
+//		/** nodes */
+//		test_node_0();
 
 	}
 

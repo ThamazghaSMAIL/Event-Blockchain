@@ -1,5 +1,6 @@
 package blockchain;
 
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
@@ -24,15 +25,19 @@ import com.google.gson.GsonBuilder;
 
 import merckletree.MerckleTree;
 import merckletree.MerckleTree.MerckleTreeNode;
+import p2p.node.Node;
 
-public class Block {
+public class Block implements Serializable{
 
-	public Block(String previous_hash, List<Transaction> transactions, byte[] public_key) 
+	private static final long serialVersionUID = 1L;
+
+	public Block(String previous_hash, List<Transaction> transactions, byte[] public_key, int nounce, int level) 
 			throws NoSuchAlgorithmException {
 		this.previous_hash = previous_hash;
 		this.transactions = transactions;
 		this.public_key = public_key;
-		
+		this.nounce = nounce;
+		this.timestamp = (int) System.currentTimeMillis();
 		List<MerckleTreeNode> nodes = new ArrayList<MerckleTreeNode>();
 		MerckleTreeNode node =null;
 		for (Transaction t : this.transactions) {
@@ -46,6 +51,7 @@ public class Block {
 			e.printStackTrace();
 		}
 		this.hash = hash_block();
+
 	}
 
 
@@ -67,10 +73,12 @@ public class Block {
 
 	private byte[] public_key;
 
-	private int nonce;
-	
+	private int nounce;
+
 	//TODO 
-	private int timeStamp ; 
+	private int timestamp ; 
+
+	private int level;
 
 	/**
 	 * retourne beta
@@ -117,7 +125,7 @@ public class Block {
 
 		dsa.initSign(priv);
 
-		
+
 		byte[] strByte = this.hash.getBytes("UTF-8");
 		dsa.update(strByte);
 
@@ -131,16 +139,6 @@ public class Block {
 
 		return result;
 	}
-
-	//TODO modifier pour le calculer
-	/**
-	 * generer un nmbre aléatoire inferieur a la difficulté
-	 * @return
-	 */
-	private void findNounce() {
-		this.nonce = 1;
-	}
-
 
 	private static String hmacsha256(String text) throws NoSuchAlgorithmException {
 		String message = text;
@@ -173,5 +171,88 @@ public class Block {
 		return gson.toJson(b);
 	}
 
+	public String getHash() {
+		return hash;
+	}
 
+	public void setHash(String hash) {
+		this.hash = hash;
+	}
+
+	public byte[] getMerckletreeroot() {
+		return merckletreeroot;
+	}
+
+	public void setMerckletreeroot(byte[] merckletreeroot) {
+		this.merckletreeroot = merckletreeroot;
+	}
+
+	public String getPrevious_hash() {
+		return previous_hash;
+	}
+
+	public void setPrevious_hash(String previous_hash) {
+		this.previous_hash = previous_hash;
+	}
+
+	public List<Transaction> getTransactions() {
+		return transactions;
+	}
+
+	public void setTransactions(List<Transaction> transactions) {
+		this.transactions = transactions;
+	}
+
+	public String getSignature() {
+		return signature;
+	}
+
+	public void setSignature(String signature) {
+		this.signature = signature;
+	}
+
+	public byte[] getPublic_key() {
+		return public_key;
+	}
+
+	public void setPublic_key(byte[] public_key) {
+		this.public_key = public_key;
+	}
+
+	public int getNounce() {
+		return nounce;
+	}
+
+	public void setNounce(int nounce) {
+		this.nounce = nounce;
+	}
+
+	public int getTimestamp() {
+		return timestamp;
+	}
+
+	public void setTimestamp(int timestamp) {
+		this.timestamp = timestamp;
+	}
+
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
+
+	public int getLevel() {
+		return level;
+	}
+
+	public void setLevel(int level) {
+		this.level = level;
+	}
+
+
+	public boolean verifyBlockTime() {
+		if( this.timestamp < (int) System.currentTimeMillis()+2 )
+			return true;
+		return false;
+	}
+	
+	
 }
